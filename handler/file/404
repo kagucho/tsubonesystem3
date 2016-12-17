@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <body>
+    <p>
+      You can test that <code>responseWriterCustomized</code> uses
+      <code>fileError</code> to make a response for an error by issuing
+      <code>http.StatusNotFound</code> and asserting it writes the content of
+      this file.
+    </p>
+    <p>
+      You can test that <code>file.ServeHTTP</code> uses
+      <code>responseWriterCustomized</code> to customize error responses by
+      requesting invalid path such as <code>/invalid</code> and asserting it
+      writes the content of this file.
+    </p>
+    <p>
+      You can test that <code>file.ServeHTTP</code> responses with
+      <code>http.StatusNotFound</code> and the customized error message for
+      <code>/index</code> by requesting <code>/index</code> and confirming it
+      writes the content of this file.
+    </p>
+  </body>
+</html>

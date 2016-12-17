@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!--
+  Copyright (C) 2016  Kagucho <kagucho.net@gmail.com>
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+  This license doesn't apply for quotations. They are licensed as noted in them.
+-->
+<html lang="ja">
+  <head prefix="og: http://ogp.me/ns#">
+    <link href="/favicon.ico" rel="icon">
+    <link crossorigin="anonymous"
+          href="https://cdn.jsdelivr.net/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+          rel="stylesheet">
+    <link href="/error.css" rel="stylesheet">
+    {{range .Properties}}
+    <meta content={{.Content}} property={{.Property}}>
+    {{end}}
+    <title>神楽坂一丁目通信局 - URIが違います</title>
+  </head>
+  <body>
+    <h1 class="text-nowrap">神楽坂一丁目通信局</h1>
+    <h2>URIが違います</h2>
+    <p>あなたが行きたいのはもしかして <a href={{.URL}}>{{.URL}}</a> ?</p>
+    ${require("./footer.html")}
+    <script>location.href = {{.URL}};</script>
+  </body>
+</html>

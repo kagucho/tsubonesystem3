@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<!--
+  Copyright (C) 2016  Kagucho <kagucho.net@gmail.com>
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html lang="ja">
+  <head prefix="og: http://ogp.me/ns#">
+    <link href="favicon.ico" rel="icon">
+    <link crossorigin="anonymous"
+          href="https://cdn.jsdelivr.net/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+          rel="stylesheet">
+    <meta property="og:title" content="TsuboneSystem">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="favicon.ico">
+    <meta property="og:url" content="https://kagucho.net/private">
+    <meta property="og:description" content="神楽坂一丁目通信局の局員が使用するWebサービスです。">
+    <meta property="og:locale" content="ja_JP">
+    <style>
+      ${require("./index.css")}
+      ${require("../crossfade/index.css")}
+    </style>
+    <title>TsuboneSystem</title>
+  </head>
+  <body>
+    <div id="container"></div>
+    <script crossorigin="anonymous"
+            integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7"
+            src="https://cdn.jsdelivr.net/jquery/3.1.1/jquery.min.js">
+    </script>
+    <script crossorigin="anonymous"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            src="https://cdn.jsdelivr.net/bootstrap/3.3.7/js/bootstrap.min.js">
+    </script>
+    <script crossorigin="anonymous"
+            integrity="sha384-KJG3pC1J+6h1dijth3tpKAOcOZIpATY5CxCqs76ahWigxyggrfd6lYWCToiYSLwY"
+            src="https://cdn.jsdelivr.net/riot/3.0.2/riot.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/riot-route/3.0.2/route.min.js"
+            integrity="sha384-sBVcn4ih37JfVyl7k5r/MJA/sjzDCEzDyXS8/tA48iRC6rwNakCkcdkuqAewEpab"
+            crossorigin="anonymous"></script>
+    <script>${require("../../loader/js.js!./index.js")}</script>
+  </body>
+  <datalist id="gender">
+    <option value="男">
+    <option value="女">
+  </datalist>
+</html>

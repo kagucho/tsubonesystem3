@@ -1,0 +1,111 @@
+/*
+  Copyright (C) 2016  Kagucho <kagucho.net@gmail.com>
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+  This license doesn't apply for quotations. They are licensed as noted in them.
+*/
+
+#about {
+  background: none repeat scroll 0 0 #eee;
+  color: black;
+  padding: 4em 0;
+}
+
+#about-button {
+  background: none repeat scroll 0 0 rgba(0, 0, 0, 0.57);
+  border-color: #ccc;
+  color: #eee;
+}
+
+#about-button:hover, #about-button:focus, #about-button:active {
+  background-color: #eee;
+  border-color: #aaa;
+  color: #333;
+}
+
+#background div {
+  background-size: cover;
+  left: 0;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+#background0 {
+  background-image: url(./images/slides/room.jpg);
+}
+
+#background1 {
+  background-image: url(./images/slides/papers0.jpg);
+}
+
+#background2 {
+  background-image: url(./images/slides/drawing0.jpg);
+}
+
+#background3 {
+  background-image: url(./images/slides/drawing1.jpg);
+}
+
+#background4 {
+  background-image: url(./images/slides/papers1.jpg);
+}
+
+#background5 {
+  background-image: url(./images/slides/all.jpg);
+}
+
+#clubs {
+  background: none repeat scroll 0 0 #444;
+  color: #eee;
+  padding: 4em 0;
+}
+
+.club-item {
+  background: #333;
+  border: 0.1em solid #ccc;
+  margin-bottom: 1em;
+  padding: 1em;
+}
+
+.club-item a:not(:hover) {
+  color: white;
+}
+
+.club-item a {
+  text-decoration: none;
+}
+
+#contact {
+  background: none repeat scroll 0 0 rgba(0, 0, 0, 0.8);
+  border-top: 0.1em solid #ccc;
+  color: #eee;
+  padding: 4em 0;
+}
+
+#caption {
+  margin: 0;
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+}
+
+#top {
+  background: rgba(0, 0, 0, 0.5);
+  color: #eee;
+  display: table;
+  height: 100vh;
+  width: 100%;
+}

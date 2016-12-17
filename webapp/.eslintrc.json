@@ -1,0 +1,55 @@
+{
+  "extends": "eslint:all",
+  "globals": {
+    "riot": false
+  },
+  "parserOptions": {
+    "ecmaVersion": 7,
+    "sourceType": "module"
+  },
+  "rules": {
+    "arrow-parens": ["warn", "as-needed"],
+    "comma-dangle": ["warn", "always-multiline"],
+    "computed-property-spacing": "warn",
+    "consistent-return": "off",
+    "curly": ["warn", "multi", "consistent"],
+    "eqeqeq": "off",
+    "func-name-matching": ["warn", "never"],
+    "func-names": ["warn", "never"],
+    "func-style": ["warn", "declaration"],
+    "id-length": "off",
+    "indent": ["warn", 2],
+    "lines-around-comment": "off",
+    "max-len": ["warn", {"ignoreUrls": true, "tabWidth": 8}],
+    "max-params": "off",
+    "multiline-ternary": "off",
+    "new-cap": ["warn", {"capIsNewExceptionPattern": "^\\$\\."}],
+    "new-parens": "off",
+    "newline-after-var": "off",
+    "newline-per-chained-call": "off",
+    "no-confusing-arrow": "off",
+    "no-invalid-this": "off",
+    "no-empty-function": "off",
+    "no-loop-func": "off",
+    "no-magic-numbers": "off",
+    "no-plusplus": "off",
+    "no-process-env": "off",
+    "no-restricted-syntax": ["warn", "WithStatement"],
+    "no-ternary": "off",
+    "no-void": "off",
+    "object-property-newline": "off",
+    "one-var": ["warn", "never"],
+    "operator-linebreak": [
+      "warn", "after", {"overrides": {"?": "after", ":": "after"}}
+    ],
+    "padded-blocks": ["warn", "never"],
+    "prefer-template": "off",
+    "quote-props": ["warn", "consistent-as-needed"],
+    "require-jsdoc": "off",
+    "sort-keys": "off",
+    "space-before-function-paren": ["warn", "never"],
+    "space-unary-ops": ["warn", {"words": true}],
+    "valid-jsdoc": "off",
+    "yield-star-spacing": ["warn", {"before": true, "after": false}]
+  }
+}

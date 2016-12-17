@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<!--
+  Copyright (C) 2016  Kagucho <kagucho.net@gmail.com>
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html lang="en">
+  <body>
+    <p>
+      <a href="{{if .Query}}?{{end}}{{.Last}}">This is an ambigious link.</a> It
+      causes <code>template.ErrAmbigContext</code> when executing this as a
+      template.
+    </p>
+    <p>
+      You can test whether <code>file.ServeMovedPermanently</code> uses
+      <code>html/template</code> and it can handle an error caused in the
+      package by calling the function and asserting it emits a log.
+    </p>
+  </body>
+</html>
