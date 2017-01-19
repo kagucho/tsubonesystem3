@@ -19,19 +19,24 @@
 */
 
 @keyframes crossfade-frames {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+	0% {
+		opacity: 0;
+	}
+
+	100% {
+		opacity: 1;
+	}
 }
 
 .crossfade-fadingin {
-  animation: crossfade-frames 4s ease-in;
-  z-index: -1;
+	animation: crossfade-frames 4s ease-in;
+	z-index: -1;
 }
 
 .crossfade-element {
-  visibility: hidden;
+	visibility: hidden;
 }
 
 .crossfade-visible {
-  z-index: -2;
+	z-index: -2;
 }

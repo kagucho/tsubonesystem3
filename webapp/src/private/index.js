@@ -1,60 +1,24 @@
 /**
- * @file index.js implements the entry point for the private page.
- * @author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
- * @copyright Kagucho 2016
- * @license AGPL-3.0
- */
+	@file index.js implements the entry point for the private page.
+	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
+	@copyright 2017  {@link https://kagucho.net/|Kagucho}
+	@license AGPL-3.0
+*/
 
 /** @module private */
 
-import "./tags/app/club.tag";
-import "./tags/app/clubs.tag";
-import "./tags/app/index.tag";
-import "./tags/app/member.tag";
-import "./tags/app/members.tag";
-import "./tags/app/officer.tag";
-import "./tags/app/officers.tag";
-import "./tags/table/member.tag";
-import "./tags/table/officer.tag";
-import "./tags/container.tag";
-import "./tags/notfound.tag";
-import "./tags/recover-session.tag";
-import "./tags/signin.tag";
-import "./tags/top-progress.tag";
-import Client from "./client";
+import * as recover from "./components/recover";
+import * as signin from "./components/signin";
+import app from "./components/app";
 
 /**
- * client is a module:client.
- * @type !module:client
- */
-const client = new Client("/");
+	container is the element which will contain the content.
+	@type {!external:DOM~HTMLElement}
+*/
+const container = document.getElementById("container");
 
-const recoverDeferred = $.Deferred();
-riot.mount("#container", "recover-session",
-           {client, deferred: recoverDeferred});
-recoverDeferred.catch(() => {
-  const signinDeferred = $.Deferred();
-  riot.mount("#container", "signin", {client, deferred: signinDeferred});
+m.mount(container, recover).catch(
+	() => m.mount(container, signin)).done(
+		() => m.route(container, "", app));
 
-  return signinDeferred;
-}).then(() => route.start(true));
-
-route.base("/private");
-
-route("#!clubs..", () => riot.mount("#container", "app-clubs", {client}));
-route("#!club..", () => riot.mount("#container", "app-club", {client}));
-
-route("#!members..",
-           () => riot.mount("#container", "app-members", {client}));
-
-route("#!member..",
-           () => riot.mount("#container", "app-member", {client}));
-
-route("#!officers..",
-           () => riot.mount("#container", "app-officers", {client}));
-
-route("#!officer..",
-           () => riot.mount("#container", "app-officer", {client}));
-
-route("", () => riot.mount("#container", "app-index"));
-route("..", () => riot.mount("#container", "notfound"));
+m.route.mode = "hash";

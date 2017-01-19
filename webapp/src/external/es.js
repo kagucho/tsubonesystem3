@@ -1,72 +1,84 @@
 /**
- * @file es.js includes documentations for ECMAScript.
- * This includes citations and you may refer to links for the source.
- * @author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
- * @copyright Kagucho 2016
- * @license AGPL-3.0
- */
+	@file es.js includes documentations for ECMAScript.
+	This includes citations and you may refer to links for the source.
+	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
+	@copyright 2017  {@link https://kagucho.net/|Kagucho}
+	@license AGPL-3.0
+*/
 
 /**
- * ECMAScript is the language embedded in web browsers.
- * @external ES
- * @see {@link
- *       http://www.ecma-international.org/ecma-262/6.0/#sec-object-objects|
- *       ECMAScript 2015 Language Specification – ECMA-262 6th Edition}
- */
+	ECMAScript is the language embedded in web browsers.
+	@external ES
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html|
+		ECMAScript® 2016 Language Specification}
+*/
 
 /**
- * The Undefined type has exactly one value, called undefined.
- * @interface external:ES~Undefined
- * @extends external:ES.Object
- * @see {@link
- *       http://www.ecma-international.org/ecma-262/6.0/#sec-ecmascript-language-types-undefined-type|
- *       ECMAScript 2015 Language Specification – ECMA-262 6th Edition
- *       6.1.1 The Undefined Type}
- */
+	The type whose sole value is the undefined value.
+	@interface external:ES~Undefined
+	@extends external:ES.Object
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-terms-and-definitions-undefined-type|
+		ECMAScript® 2016 Language Specification
+		4.3.11 Undefined type}
+*/
 
 /**
- * Object object.
- * @class external:ES.Object
- * @param {?external:ES.Object} value - The value to be converted to a value of
- * type Object.
- * @returns {!external:ES.Object} A new object.
- * @see {@link
- *       http://www.ecma-international.org/ecma-262/6.0/#sec-object-objects|
- *       ECMAScript 2015 Language Specification – ECMA-262 6th Edition
- *       19.1 Object Objects}
- */
+	The type consisting of the primitive values true and false.
+	@class external:ES.Boolean
+	@extends external:ES.Object
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-terms-and-definitions-boolean-type|
+		ECMAScript® 2016 Language Specification
+		4.3.15 Boolean type}
+*/
 
 /**
- * String object.
- * @class external:ES.String
- * @extends external:ES.Object
- * @param {?external:ES.Object} value - The value to be converted to String.
- * @returns {!external:ES.String} A new string.
- * @see {@link
- *       http://www.ecma-international.org/ecma-262/6.0/#sec-string-objects|
- *       ECMAScript 2015 Language Specification – ECMA-262 6th Edition
- *       21.1 String Objects}
- */
+	The set of all possible Number values including the special
+	“Not-a-Number” (NaN) value, positive infinity, and negative infinity.
+	@class external:ES.Number
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-terms-and-definitions-number-type|
+		ECMAScript® 2016 Language Specification
+		4.3.21 Number type}
+*/
 
 /**
- * WeakMap objects are collections of key/value pairs where the keys are objects
- * and values may be arbitrary ECMAScript language values.
- * @class external:ES.WeakMap
- * @extends external:ES.Object
- * @param {?external:ES~Iterable} iterable - The value to be converted to
- * WeakMap.
- * @returns {!external:ES.WeakMap} A new WeakMap.
- * @see {@link
- *       http://www.ecma-international.org/ecma-262/6.0/#sec-weakmap-objects|
- *       ECMAScript 2015 Language Specification – ECMA-262 6th Edition
- *       23.3 WeakMap Objects}
- */
+	The set of all possible String values.
+	@class external:ES.String
+	@extends external:ES.Object
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-terms-and-definitions-string-type|
+		ECMAScript® 2016 Language Specification
+		4.3.18 String type}
+*/
 
 /**
- * The Iterable interface includes @@iterator property.
- * @interface external:ES~Iterable
- * @see {@link
- *       http://www.ecma-international.org/ecma-262/6.0/#sec-iterable-interface|
- *       ECMAScript 2015 Language Specification – ECMA-262 6th Edition
- *       25.1.1.1 The Iterable Interface}
- */
+	Object object.
+	@class external:ES.Object
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-object-objects|
+		ECMAScript® 2016 Language Specification
+		19.1 Object Objects}
+*/
+
+/**
+	WeakMap objects are collections of key/value pairs where the keys are objects
+	and values may be arbitrary ECMAScript language values.
+	@class external:ES.WeakMap
+	@extends external:ES.Object
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-weakmap-objects|
+		ECMAScript® 2016 Language Specification
+		23.3 WeakMap Objects}
+*/
+
+/**
+	The Iterable interface includes @@iterator property.
+	@interface external:ES~Iterable
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-iterable-interface|
+		ECMAScript® 2016 Language Specification
+		25.1.1.1 The Iterable Interface}
+*/

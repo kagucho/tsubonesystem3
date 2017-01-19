@@ -1,205 +1,147 @@
 /*
-  Copyright (C) 2016  Kagucho <kagucho.net@gmail.com>
+	Copyright (C) 2017  Kagucho <kagucho.net@gmail.com>
 
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published
+	by the Free Software Foundation, either version 3 of the License, or (at
+	your option) any later version.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
 
-  You should have received a copy of the GNU Affero General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 // Package common implements common functions for API v0.
 package common
 
 import (
-  `encoding/json`
-  `log`
-  `net/http`
-  `reflect`
-  `runtime/debug`
-  `strconv`
+	"encoding/json"
+	"log"
+	"net/http"
+	"runtime/debug"
 )
 
 // Error is a structure to hold an error to serve.
+//
+// The JSON-encoded structure is conforming to RFC 6749 - The OAuth 2.0
+// Authorization Framework 5.2.  Error Response.
+// https://tools.ietf.org/html/rfc6749#section-5.2
 type Error struct {
-  ID string `json:"error"`
-  Description string `json:"error_description"`
-  URI string `json:"error_uri"`
+	ID          string `json:"error"`
+	Description string `json:"error_description"`
+	URI         string `json:"error_uri"`
 }
 
-var statusError = map[int]struct{
-  id string
-  uri string
+var statusError = map[int]struct {
+	id  string
+	uri string
 }{
-  http.StatusBadRequest: {
-    `invalid_request`,
-    `https://tools.ietf.org/html/rfc7231#section-6.5.1`,
-  },
-  http.StatusNotFound: {
-    `not_found`,
-    `https://tools.ietf.org/html/rfc7231#section-6.5.4`,
-  },
-  http.StatusMethodNotAllowed: {
-    `method_not_allowed`,
-    `https://tools.ietf.org/html/rfc7231#section-6.5.5`,
-  },
-  http.StatusInternalServerError: {
-    `internal_server_error`,
-    `https://tools.ietf.org/html/rfc7231#section-6.6.1`,
-  },
-  http.StatusTooManyRequests: {
-    `too_many_requests`,
-    `https://tools.ietf.org/html/rfc6585#section-4`,
-  },
+	http.StatusBadRequest: {
+		`invalid_request`,
+		`https://tools.ietf.org/html/rfc7231#section-6.5.1`,
+	},
+	http.StatusNotFound: {
+		`not_found`,
+		`https://tools.ietf.org/html/rfc7231#section-6.5.4`,
+	},
+	http.StatusMethodNotAllowed: {
+		`unsupported_response_type`,
+		`https://tools.ietf.org/html/rfc7231#section-6.5.5`,
+	},
+	http.StatusInternalServerError: {
+		`server_error`,
+		`https://tools.ietf.org/html/rfc7231#section-6.6.1`,
+	},
+	http.StatusTooManyRequests: {
+		`too_many_requests`,
+		`https://tools.ietf.org/html/rfc6585#section-4`,
+	},
 }
 
 // Recover recovers, logs, and serves Internal Server Error.
 func Recover(writer http.ResponseWriter) {
-  if recovered := recover(); recovered != nil {
-    log.Println(recovered)
-    debug.PrintStack()
-    ServeErrorDefault(writer, http.StatusInternalServerError)
-  }
+	if recovered := recover(); recovered != nil {
+		log.Println(recovered)
+		debug.PrintStack()
+		ServeErrorDefault(writer, http.StatusInternalServerError)
+	}
+}
+
+// ErrorEncode encodes the error to a string conforming to
+// RFC 6749 - The OAuth 2.0 Authorization Framework 5.2.  Error Response
+// https://tools.ietf.org/html/rfc6749#section-5.2
+func ErrorEncode(decoded string) string {
+	const hex = `0123456789ABCDEF`
+	encoded := make([]byte, 0, len(decoded) * 3)
+
+	for index := 0; index < len(decoded); index++ {
+		if (decoded[index] < 0x20 || decoded[index] == 0x22 ||
+			decoded[index] == '%' ||
+			decoded[index] == 0x5c || decoded[index] > 0x7e) {
+			encoded = append(encoded, '%',
+				hex[decoded[index] >> 4],
+				hex[decoded[index] & 15])
+		} else {
+			encoded = append(encoded, decoded[index])
+		}
+	}
+
+	return string(encoded)
 }
 
 // ServeError serves an error according to the given arguments.
-func ServeError(writer http.ResponseWriter,
-                id string, description string, uri string, code int) {
-  response := func() Error {
-    defer Recover(writer)
+// The error response is conforming to RFC 6749  - The OAuth 2.0
+// Authorization Framework 5.2.  Error Response.
+// https://tools.ietf.org/html/rfc6749#section-4.2.2.1
+func ServeError(writer http.ResponseWriter, response Error, code int) {
+	success := func() bool {
+		defer Recover(writer)
 
-    var response Error
+		if response.ID == `` {
+			response.ID = statusError[code].id
+		} else {
+			response.ID = ErrorEncode(response.ID)
+		}
 
-    if id == `` {
-      response.ID = statusError[code].id
-    } else {
-      response.ID = id
-    }
+		if response.Description == `` {
+			response.Description = http.StatusText(code)
+		} else {
+			response.Description = ErrorEncode(response.Description)
+		}
 
-    if description == `` {
-      response.Description = http.StatusText(code)
-    } else {
-      response.Description = description
-    }
+		if response.URI == `` {
+			response.URI = statusError[code].uri
+		} else {
+			response.URI = ErrorEncode(response.URI)
+		}
 
-    if uri == `` {
-      response.URI = statusError[code].uri
-    } else {
-      response.URI = uri
-    }
+		return true
+	}()
 
-    return response
-  }()
-
-  if (response != Error{}) {
-    ServeJSON(writer, response, code)
-  }
+	if (success) {
+		ServeJSON(writer, response, code)
+	}
 }
 
-/*
-  ServeErrorDefault serves an error with the given status code and the default
-  messages for the code.
- */
+// ServeErrorDefault serves an error with the given status code and the default
+// messages for the code.
 func ServeErrorDefault(writer http.ResponseWriter, code int) {
-  ServeError(writer, ``, `` , ``, code)
-}
-
-func setHeader(writer http.ResponseWriter, bodyLen int) {
-  header := writer.Header()
-  if header.Get(`Content-Encoding`) == `` {
-    header.Set(`Content-Length`, strconv.Itoa(bodyLen))
-  }
-  header.Set(`Content-Type`, `application/json; charset=UTF-8`)
+	ServeError(writer, Error{}, code)
 }
 
 // ServeJSON writes given data in JSON.
 func ServeJSON(writer http.ResponseWriter, data interface{}, code int) {
-  bytes := func() []byte {
-    defer Recover(writer)
+	writer.Header().Set(`Content-Type`, `application/json`)
+	writer.WriteHeader(code)
 
-    bytes, marshalError := json.Marshal(data)
-    if marshalError != nil {
-      panic(marshalError)
-    }
+	encoder := json.NewEncoder(writer)
+	encoder.SetEscapeHTML(false)
 
-    setHeader(writer, len(bytes))
-
-    return bytes
-  }()
-
-  writer.WriteHeader(code)
-  writer.Write(bytes)
-}
-
-// ServeJSONChan writes JSON-chan or abandon if recieved an error with the given
-// channel. It also drains the given channels.
-func ServeJSONChan(writer http.ResponseWriter, data interface{},
-                   dataChan interface{}, errorChan <-chan error, code int) {
-  bytesChan := make(chan []byte, 1)
-
-  go func() {
-    defer Recover(writer)
-    defer close(bytesChan)
-
-    bytes, marshalError := json.Marshal(data)
-    if marshalError != nil {
-      panic(marshalError)
-    }
-
-    bytesChan <- bytes
-  }()
-
-loop:
-  select {
-  case result := <-bytesChan:
-    if result != nil {
-      setHeader(writer, len(result))
-      writer.WriteHeader(code)
-      writer.Write(result)
-    }
-
-  case result, present := <-errorChan:
-    if present {
-      ServeErrorDefault(writer, http.StatusInternalServerError)
-      log.Println(result)
-    } else {
-      errorChan = nil
-      goto loop
-    }
-  }
-
-  func() {
-    defer func() {
-      if recovered := recover(); recovered != nil {
-        log.Println(recovered)
-        debug.PrintStack()
-      }
-    }()
-
-    cases := []reflect.SelectCase{
-      reflect.SelectCase{
-        Dir: reflect.SelectRecv, Chan: reflect.ValueOf(dataChan),
-      }, reflect.SelectCase{
-        Dir: reflect.SelectRecv, Chan: reflect.ValueOf(errorChan),
-      },
-    }
-
-    for cases[0].Chan.IsValid() && cases[1].Chan.IsValid() {
-      index, value, present := reflect.Select(cases)
-      if present {
-        if index == 1 {
-          log.Println(value)
-        }
-      } else {
-        cases[index].Chan = reflect.Value{}
-      }
-    }
-  }()
+	if encodeError := encoder.Encode(data); encodeError != nil {
+		panic(encodeError)
+	}
 }
