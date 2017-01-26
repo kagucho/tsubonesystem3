@@ -2,7 +2,7 @@
 	@file index.js implements the route of the application.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/components/app */
@@ -13,6 +13,7 @@ import * as member from "./member";
 import * as members from "./members";
 import * as officer from "./officer";
 import * as officers from "./officers";
+import * as password from "./password";
 import * as root from "./root";
 
 /**
@@ -24,4 +25,5 @@ export default Object.freeze({
 	"!club":     club, "!clubs":    clubs,
 	"!member":   member, "!members":  members,
 	"!officer":  officer, "!officers": officers,
+	"!password": password,
 });

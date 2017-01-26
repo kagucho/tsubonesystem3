@@ -2,7 +2,7 @@
 	@file clubs.js implements the club component.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/components/app/clubs */
@@ -17,43 +17,27 @@
 import * as client from "../../client";
 import * as container from "../container";
 import * as progress from "../progress";
+import {ProgressSum} from "../../../progress_sum";
 import {officers} from "../table";
 
 export class controller {
 	constructor() {
-		client.clubList().then(clubs => {
+		this.progress = new ProgressSum;
+		this.load();
+	}
+
+	load() {
+		this.progress.add(client.clubList().then(clubs => {
 			this.clubs = clubs;
-			m.redraw();
 		}, xhr => {
 			this.error = client.error(xhr) || "どうしようもないエラーが発生しました。";
-			this.endProgress();
-			m.redraw();
-		}, event => {
-			this.updateProgress(event);
-			m.redraw();
-		});
-
-		this.startProgress();
-	}
-
-	startProgress() {
-		this.progress = {value: 0};
-	}
-
-	updateProgress(event) {
-		this.progress = {max: event.total, value: event.loaded};
-	}
-
-	endProgress() {
-		if (this.progress.value != this.progress.max) {
-			delete this.progress;
-		}
+		}));
 	}
 }
 
 export function view(control) {
 	return [
-		control.progress && m(progress, control.progress),
+		m(progress, control.progress.html()),
 		m(container, m("div", {className: "container"},
 			m("h1", {style: {fontSize: "x-large"}}, "Clubs"),
 			control.error && m("div", {
@@ -72,9 +56,10 @@ export function view(control) {
 					m("h3", "部長"),
 					m(officers, {
 						members:     [club.chief],
-						onloadstart: control.startProgress.bind(control),
-						onloadend:   control.endProgress.bind(control),
-						onprogress:  control.updateProgress.bind(control),
+						onloadstart: (function(promise) {
+							this.progress.add(promise.done(
+								submission => submission && this.load()));
+						}).bind(control),
 					})
 				), m("h2", {style: {fontSize: "large"}},
 					m("a", {href: "#!club?id="+club.id},

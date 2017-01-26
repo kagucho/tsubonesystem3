@@ -1,3 +1,5 @@
+configuration/configuration.go
+node_modules
+npm-debug.log*
 webapp/coverage
-webapp/node_modules
 webapp/out

@@ -1,15 +1,89 @@
-# Build requirements
-* Go 1.7
-* Java 8
-* Node.js
+# Getting started
 
-# Client requirements
+Are you interested in the next generation of TsuboneSystem? Why not try on your
+computer?
+
+## Building requirements
+All of the following softwares:
+
+* [GNU Bash](https://www.gnu.org/software/bash/)
+* [Go 1.7](https://golang.org/)
+* [OpenJDK 8](http://openjdk.java.net/)
+* [MariaDB 10.1](https://mariadb.org/)
+* [Node.js](https://nodejs.org/)
+* [npm](https://npmjs.com/)
+* [procps (ps command)](https://gitlab.com/procps-ng/procps)
+
+Platforms other than Arch Linux are not tested. Fixes for other Linux
+distributions, Microsoft-supported Windows and macOS are highly appreciated.
+
+## Client requirements
 Either of the following browsers:
 
-* Google Chrome 53 or any later version
-* Microsoft Edge
-* Microsoft Internet Explorer 11
-* Mozilla Firefox 45 or any later version
+* [Google Chrome 53 or any later version](https://www.google.com/chrome/browser/)
+* [Microsoft Edge](https://www.microsoft.com/ja-jp/windows/microsoft-edge)
+* [Microsoft Internet Explorer 11](https://support.microsoft.com/ja-jp/products/internet-explorer)
+* [Mozilla Firefox 45 or any later version](https://www.mozilla.org/en-US/firefox/)
+
+If you use older Internet Explorer, throw it away and go Firefox.
+
+## Testing
+1\. Set an appropriate `GOPATH`.
+
+```
+export GOPATH=/somewhere/nice
+```
+
+2\. Download TsuboneSystem3 with `go get`.
+
+```
+go get -d github.com/kagucho/tsubonesystem3
+```
+
+3\. Create a configuration file as `configuration/configuration.go`.
+
+Configure for `tsubonesystem3` command. See `configuration/example` for an
+example and detailed explanations for the configuration.
+
+4\. Create a new database.
+
+```
+$ mysql
+> CREATE DATABASE tsubonesystem;
+> exit
+$
+```
+
+5\. Deploy the testing tables.
+
+```
+$ mysql < test.sql
+```
+
+5\. Update dependencies.
+
+```
+$ npm update --dev
+```
+
+6\. Install!
+
+```
+npm install
+```
+
+7\. Start!
+
+```
+npm start
+```
+
+Run command `npm stop` __in the same session__ to stop.
+
+npm provides other helpful scripts; see `package.json`.
+
+# License
+This software is licensed under AGPL-3.0. See `COPYING.TXT`.
 
 # Standards
 This application implicitly conforms to the following standards.

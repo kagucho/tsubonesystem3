@@ -2,7 +2,7 @@
 	@file container.js implements the container of the application.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/components/container */

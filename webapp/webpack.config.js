@@ -24,16 +24,13 @@ function omitDummy() {
 	});
 }
 
-const getFileExtractUseEntries = name => [
-	{
-		loader:  "file-loader",
-		options: {name},
-	},
-	"./loader/extract.js",
-];
+const getFileEntry = name => ({
+	loader:  "file-loader",
+	options: {name},
+});
 
 const htmlEntry = {
-	loader: "html-loader",
+	loader:  "html-loader",
 	options: {interpolate: "require"},
 };
 
@@ -57,7 +54,9 @@ module.exports = {
 		"./src/error/503.html",
 		"./src/error/unknown.html",
 		"./src/graph.html",
+		"./src/mail/html/confirmation.html",
 		"./src/mail/html/creation.html",
+		"./src/mail/text/confirmation.txt",
 		"./src/mail/text/creation.txt",
 		"./src/footer.css",
 		"./src/agpl-3.0.html",
@@ -70,11 +69,15 @@ module.exports = {
 		rules: [
 			{
 				include: path.resolve(__dirname, "src/footer.html"),
-				loader: "html-loader",
+				loader:  "html-loader",
 			}, {
 				include: path.resolve(__dirname, "src/footer.css"),
-				use:     getFileExtractUseEntries("footer.css").concat(
-						"css-loader", "postcss-loader"),
+				use:     [
+					getFileEntry("footer.css"),
+					"./loader/extract.js",
+					"css-loader",
+					"postcss-loader",
+				],
 			}, {
 				test:    /\.css$/,
 				exclude: path.resolve(__dirname, "src/footer.css"),
@@ -82,24 +85,44 @@ module.exports = {
 			}, {
 				test:    /\.html$/,
 				include: path.resolve(__dirname, "src/error"),
-				use:     getFileExtractUseEntries("../error/[name]").concat(htmlEntry),
+				use:     [
+					getFileEntry("../error/[name]"),
+					"./loader/extract.js",
+					htmlEntry,
+				],
 			}, {
 				include: path.resolve(__dirname, "src/graph.html"),
-				use:     getFileExtractUseEntries("../graph").concat(htmlEntry),
+				use:     [
+					getFileEntry("../graph"),
+					"./loader/extract.js",
+					htmlEntry,
+				],
 			}, {
 				include: path.resolve(__dirname, "src/mail/html"),
-				use:     getFileExtractUseEntries("../mail/html/[name]").concat(
-					"./loader/unix2dos.js", htmlEntry),
+				use:     [
+					getFileEntry("../mail/html/[name]"),
+					"./loader/unix2dos.js",
+					"./loader/extract.js",
+					htmlEntry,
+				],
 			}, {
 				include: path.resolve(__dirname, "src/private/index.html"),
-				use:     getFileExtractUseEntries("private").concat(htmlEntry),
+				use:     [
+					getFileEntry("private"),
+					"./loader/extract.js",
+					htmlEntry,
+				],
 			}, {
 				include: [
 					"src/agpl-3.0.html",
 					"src/index.html",
 					"src/license.html",
 				].map(file => path.resolve(__dirname, file)),
-				use: getFileExtractUseEntries("[name]").concat(htmlEntry),
+				use: [
+					getFileEntry("[name]"),
+					"./loader/extract.js",
+					htmlEntry,
+				],
 			}, {
 				test:    /\.(js|tag)$/,
 				exclude: /node_modules/,
@@ -112,15 +135,17 @@ module.exports = {
 						], [
 							"es2016",
 						],
-					]
+					],
 				},
 			}, {
 				test:   /\.(gif|jpg|png)?$/,
 				loader: "file-loader",
 			}, {
 				include: path.resolve(__dirname, "src/mail/text"),
-				use:     getFileExtractUseEntries("../mail/text/[name]").concat(
-						"./loader/unix2dos.js"),
+				use:     [
+					getFileEntry("../mail/text/[name]"),
+					"./loader/unix2dos.js",
+				],
 			},
 		],
 	},

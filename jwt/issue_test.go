@@ -28,7 +28,7 @@ func (context JWT) testIssue(t *testing.T) {
 
 	before := time.Now().Add(duration).Unix()
 
-	issued, issueError := context.Issue(`sub`, `scope`, duration)
+	issued, issueError := context.Issue(`sub`, `scope`, duration, true)
 	if issueError != nil {
 		t.Fatal(issueError)
 	}
@@ -54,5 +54,5 @@ func (context JWT) testIssue(t *testing.T) {
 	}
 
 	testHeader(t, splited[0], context.authority.Alg())
-	testClaim(t, splited[1], `sub`, `scope`, before, after)
+	testClaim(t, splited[1], `sub`, `scope`, before, after, true)
 }

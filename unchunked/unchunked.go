@@ -24,13 +24,13 @@ import (
 )
 
 // Unchunked is a structure which implements an unchunked http.ResponseWriter.
-type Unchunked struct{
-	handler http.Handler
+type Unchunked struct {
+	handle http.HandlerFunc
 }
 
 // New returns a new unchunked.Unchunked.
-func New(handler http.Handler) Unchunked {
-	return Unchunked{handler}
+func New(handle http.HandlerFunc) Unchunked {
+	return Unchunked{handle}
 }
 
 // ServeHTTP serves an unchunked response.
@@ -43,7 +43,7 @@ func (unchunked Unchunked) ServeHTTP(writer http.ResponseWriter, request *http.R
 		identityQ := uint(0)
 
 		parse(accepted, func(coding codingIndex, q uint) {
-			switch (coding) {
+			switch coding {
 			case codingAny:
 				if gzipQ == unsetGzipQ {
 					gzipQ = q
@@ -67,7 +67,7 @@ func (unchunked Unchunked) ServeHTTP(writer http.ResponseWriter, request *http.R
 		writer, &unchunkedResponseWriterState{code: http.StatusOK},
 	}
 
-	if (gzipEncode) {
+	if gzipEncode {
 		writer.Header().Set(`Content-Encoding`, `gzip`)
 		gzipWriter := gzipUnchunkedResponseWriter{
 			unchunkedResponseWriter: commonWriter,
@@ -83,12 +83,12 @@ func (unchunked Unchunked) ServeHTTP(writer http.ResponseWriter, request *http.R
 			&gzipWriter.unchunkedResponseWriter.state.buffer,
 			gzip.BestCompression)
 
-		unchunked.handler.ServeHTTP(gzipWriter, request)
+		unchunked.handle(gzipWriter, request)
 		gzipWriter.finalize()
 	} else {
 		identityWriter := identityUnchunkedResponseWriter{commonWriter}
 
-		unchunked.handler.ServeHTTP(identityWriter, request)
+		unchunked.handle(identityWriter, request)
 		identityWriter.finalize()
 	}
 }

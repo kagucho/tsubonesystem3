@@ -2,7 +2,7 @@
 	@file index.js implements the entry point for the private page.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private */
@@ -18,7 +18,7 @@ import app from "./components/app";
 const container = document.getElementById("container");
 
 m.mount(container, recover).catch(
-	() => m.mount(container, signin)).done(
-		() => m.route(container, "", app));
+	m.mount.bind(m, container, signin)).done(
+		m.route.bind(m, container, "", app));
 
 m.route.mode = "hash";

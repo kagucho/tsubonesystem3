@@ -2,7 +2,7 @@
 	@file api_test.js implements a testing code for api.js.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/client/api_test */
@@ -10,7 +10,7 @@
 import * as api from "./api";
 
 describe("module:api", () => {
-	const tokenPromise = api.getTokenWithPassword("1stDisplayId", "1stPassword");
+	const tokenPromise = api.getTokenWithPassword("1stDisplayID", "1stPassword");
 
 	describe("getTokenWithPassword", () => {
 		it("should return a success promise",
@@ -24,14 +24,14 @@ describe("module:api", () => {
 			tokenPromise.then(
 				data => done(data.access_token ? null :
 					new Error("got " + data.access_token)),
-				() => this.skip());
+				this.skip.bind(this));
 		});
 
 		it("should return refresh_token", function(done) {
 			tokenPromise.then(
 				data => done(data.refresh_token ? null :
 					new Error("got " + data.refresh_token)),
-				() => this.skip());
+				this.skip.bind(this));
 		});
 	});
 
@@ -42,35 +42,35 @@ describe("module:api", () => {
 		it("should return a successful promise", function(done) {
 			tokenPromise.then(
 				() => refreshPromise.then(() => done(), done),
-				() => this.skip());
+				this.skip.bind(this));
 		});
 
 		it("should notify progress", function(done) {
 			tokenPromise.then(
 				() => refreshPromise.progress(
 					progress => progress == 1 ? done() : null),
-				() => this.skip());
+				this.skip.bind(this));
 		});
 
 		it("should resolve with access_token", function(done) {
 			refreshPromise.then(
 				data => done(data.access_token ?
 					null : new Error("invalid access_token; got " + data.access_token)),
-				() => this.skip());
+				this.skip.bind(this));
 		});
 	});
 
 	describe("memberUpdate", () => it("should reject with invalid entrance", function(done) {
 		tokenPromise.then(token => {
 			api.memberUpdate(token.access_token, {entrance: "0"}).then(
-			() => done(new Error("unexpected resolution")),
+			done.bind(undefined, new Error("unexpected resolution")),
 			xhr => {
 				const expected = "value out of range";
 				done(xhr.responseJSON.error_description != expected &&
 					new Error("expected \""+xhr.responseJSON.error_description+
 						"\", got \""+expected+"\""));
 			});
-		}, () => this.skip());
+		}, this.skip.bind(this));
 	}));
 
 	const staticConsumers = [
@@ -178,21 +178,21 @@ describe("module:api", () => {
 					tokenPromise.then(
 						() => staticPromise.then(
 							() => done(), done),
-						() => this.skip());
+						this.skip.bind(this));
 				});
 
 				it("should notify progress", function(done) {
 					tokenPromise.then(
 						() => staticPromise.progress(
 							progress => progress == 1 ? done() : null),
-						() => this.skip());
+						this.skip.bind(this));
 				});
 
 				it("should return a promise resolved with " + expected, function(done) {
 					staticPromise.then(data => {
 						const result = JSON.stringify(data);
 						done(result == expected ? null : "got " + result);
-					}, () => this.skip());
+					}, this.skip.bind(this));
 				});
 			});
 		}).bind(consumer);

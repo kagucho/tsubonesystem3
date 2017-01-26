@@ -18,7 +18,11 @@
 // Package jwt implements JWT (JSON Web Token).
 package jwt
 
-import "hash"
+import (
+	"hash"
+	"math/rand"
+	"time"
+)
 
 // Authority is the interface for the authority of JWS (JSON Web Signature).
 type Authority interface {
@@ -29,6 +33,11 @@ type Authority interface {
 // JWT is the structure to hold the context of the JWT issuer and signer.
 type JWT struct {
 	authority Authority
+}
+
+func init() {
+	// math/rand is used for Jti.
+	rand.Seed(time.Now().Unix())
 }
 
 // New returns a new jwt.JWT.

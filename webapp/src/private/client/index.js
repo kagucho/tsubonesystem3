@@ -2,7 +2,7 @@
 	@file index.js is the main file of client module.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/client */
@@ -49,7 +49,7 @@ export function clubListName() {
 	@param   {!external:jQuery~jqXHR} - A failed jqXHR.
 	@returns {!external:ES.String} The error message.
 */
-export const error = api.error;
+export const {error} = api;
 
 /**
 	getID returns the ID of the member bound to the current session.
@@ -118,6 +118,16 @@ export function memberList() {
 */
 export function memberUpdate(properties) {
 	return session.applyToken(token => api.memberUpdate(token, properties));
+}
+
+/**
+	memberUpdatePassword returns the result of updating the user password.
+	@param {!external:ES.Object} properties - The properties to update.
+	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
+	the result.
+*/
+export function memberUpdatePassword(properties) {
+	return session.applyToken(token => api.memberUpdatePassword(token, properties));
 }
 
 /**

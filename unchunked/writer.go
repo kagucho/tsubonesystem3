@@ -27,7 +27,7 @@ import (
 
 type unchunkedResponseWriterState struct {
 	buffer bytes.Buffer
-	code int
+	code   int
 }
 
 type unchunkedResponseWriter struct {
@@ -39,7 +39,7 @@ type identityUnchunkedResponseWriter struct {
 	unchunkedResponseWriter
 }
 
-type gzipUnchunkedResponseWriter struct{
+type gzipUnchunkedResponseWriter struct {
 	unchunkedResponseWriter
 	gzip *gzip.Writer
 }

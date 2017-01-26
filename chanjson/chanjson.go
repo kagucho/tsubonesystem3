@@ -61,11 +61,11 @@ func (chanJSON ChanJSON) MarshalJSON() ([]byte, error) {
 			}
 
 			bufferBytes := buffer.Bytes()
-			bufferBytes[len(bufferBytes) - 1] = ','
+			bufferBytes[len(bufferBytes)-1] = ','
 		}
 
 		bufferBytes := buffer.Bytes()
-		bufferBytes[len(bufferBytes) - 1] = ']'
+		bufferBytes[len(bufferBytes)-1] = ']'
 	}
 
 	return buffer.Bytes(), nil

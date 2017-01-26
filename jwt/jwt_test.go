@@ -54,7 +54,7 @@ func testHeader(t *testing.T, encoded string, alg string) {
 }
 
 func testClaim(t *testing.T, encoded string, sub string, scope string,
-	before int64, after int64) {
+	before int64, after int64, tmp bool) {
 	decoded, decodeError := base64.RawURLEncoding.DecodeString(encoded)
 	if decodeError != nil {
 		t.Error(decodeError)
@@ -90,6 +90,11 @@ func testClaim(t *testing.T, encoded string, sub string, scope string,
 	if unmarshaled.Exp < before || after < unmarshaled.Exp {
 		t.Errorf(`invalid Exp in header; expected an hour later, got %q`,
 			time.Unix(unmarshaled.Exp, 0))
+	}
+
+	if unmarshaled.Tmp != tmp {
+		t.Errorf(`invalid Tmp in header; expected %v, got %v`,
+			tmp, unmarshaled.Tmp)
 	}
 }
 

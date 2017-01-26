@@ -46,9 +46,9 @@ func TestUnchunked(t *testing.T) {
 	}
 
 	t.Run(`ServeHTTP`, func(t *testing.T) {
-		for _, test := range [...]struct{
+		for _, test := range [...]struct {
 			encoding string
-			gzip bool
+			gzip     bool
 		}{
 			/*
 				RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content

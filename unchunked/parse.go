@@ -110,12 +110,12 @@ func parseWeight(field string, cursor int) (uint, int) {
 	for {
 		cursor++
 
-		if (field[cursor] == 'q') {
+		if field[cursor] == 'q' {
 			break
 		}
 	}
 
-	return parseQvalue(field, cursor + 2)
+	return parseQvalue(field, cursor+2)
 }
 
 func parseField(field string, callback func(codingIndex, uint)) {
@@ -144,7 +144,7 @@ func parseField(field string, callback func(codingIndex, uint)) {
 				return
 			}
 
-			if (field[cursor] == ',') {
+			if field[cursor] == ',' {
 				break
 			}
 		}
@@ -161,7 +161,7 @@ func parseField(field string, callback func(codingIndex, uint)) {
 
 		for {
 			cursor++
-			if (!isWhitespace(field[cursor])) {
+			if !isWhitespace(field[cursor]) {
 				break
 			}
 		}

@@ -16,7 +16,6 @@
 */
 
 const LibraryTemplatePlugin = require("webpack/lib/LibraryTemplatePlugin");
-const LimitChunkCountPlugin = require("webpack/lib/optimize/LimitChunkCountPlugin");
 const NodeTemplatePlugin = require("webpack/lib/node/NodeTemplatePlugin");
 const NodeTargetPlugin = require("webpack/lib/node/NodeTargetPlugin");
 const SingleEntryPlugin = require("webpack/lib/SingleEntryPlugin");
@@ -28,17 +27,19 @@ module.exports = function() {
 
 module.exports.pitch = function(request) {
 	if (!compilers[request]) {
+		// eslint-disable-next-line no-underscore-dangle
+		const compilation = this._compilation;
+
 		const options = {
 			filename:   "entry",
-			publicPath: this._compilation.outputOptions.publicPath,
+			publicPath: compilation.outputOptions.publicPath,
 		};
 
-		// eslint-disable-next-line no-underscore-dangle
-		compilers[request] = this._compilation.createChildCompiler(request, options);
+		compilers[request] = compilation.createChildCompiler(request, options);
 
-		compilers[request].apply(new NodeTemplatePlugin(options));
 		compilers[request].apply(new LibraryTemplatePlugin(null, "commonjs2"));
 		compilers[request].apply(new NodeTargetPlugin());
+		compilers[request].apply(new NodeTemplatePlugin(options));
 		compilers[request].apply(new SingleEntryPlugin(
 			this.context, "!!" + request, "entry"));
 	}
@@ -63,6 +64,6 @@ module.exports.pitch = function(request) {
 		compilation.fileDependencies.forEach(this.addDependency);
 		compilation.contextDependencies.forEach(this.addContextDependency);
 
-		sync(null, this.exec(compilation.assets.entry.source(), request));
+		sync(null, this.exec(compilation.assets.entry.source(), request).toString());
 	});
 };

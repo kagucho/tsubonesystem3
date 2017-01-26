@@ -28,13 +28,18 @@ delete webpackConfig.plugins.shift();
 webpackConfig.plugins.push(new webpack.ProvidePlugin({$: "jquery"}));
 
 module.exports = config => config.set({
-	files:      [{pattern: "src/**/*_test.js", watched: false}],
+	files: [
+		"node_modules/mithril/mithril.js",
+		"node_modules/babel-polyfill/dist/polyfill.js",
+		{pattern: "src/**/*_test.js", watched: false},
+	],
 	frameworks: ["mocha"],
 	plugins:    [
 		"karma-chrome-launcher", "karma-coverage",
 		"karma-edge-launcher", "karma-firefox-launcher",
 		"karma-ie-launcher", "karma-mocha",
-		"karma-sourcemap-loader", "karma-webpack",
+		"karma-phantomjs-launcher", "karma-sourcemap-loader",
+		"karma-webpack",
 	],
 	preprocessors: {"src/**/*_test.js": ["webpack", "sourcemap", "coverage"]},
 	proxies:       {"/api": process.env.TSUBONESYSTEM_URL + "api"},

@@ -2,7 +2,7 @@
 	@file member.js implements the feature to show a member.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/components/app/member */
@@ -16,32 +16,25 @@
 import * as container from "../container";
 import * as primitive from "../member/primitive";
 import * as progress from "../progress";
+import ProgressSum from "../../../progress_sum";
 
 export function controller() {
-	const control = {primitive: new primitive.controller()};
+	const control = {
+		primitive: new primitive.controller,
+		progress:  new ProgressSum,
+	};
+
 	control.primitive.updateAttributes({
 		id:             m.route.param("id"), leaveOnInvalid: true,
 
-		onerror: (function(message) {
-			this.message = {body: message, type: "error"};
-		}).bind(control),
-
-		onsuccess: (function(message) {
-			this.message = {body: message, type: "success"};
-		}).bind(control),
-
-		onloadstart: (function() {
-			this.progress = {value: 0};
-		}).bind(control),
-
-		onloadend: (function() {
-			if (this.progress.value != this.progress.max) {
-				delete this.progress;
-			}
-		}).bind(control),
-
-		onprogress: (function(event) {
-			this.progress = {max: event.total, value: event.loaded};
+		onloadstart: (function(promise) {
+			this.progress.add(promise.then(submitted => {
+				if (submitted) {
+					delete this.error;
+				}
+			}, message => {
+				this.error = message;
+			}));
 		}).bind(control),
 	});
 
@@ -50,7 +43,7 @@ export function controller() {
 
 export function view(control) {
 	return [
-		control.progress && m(progress, control.progress),
+		m(progress, control.progress.html()),
 		m(container,
 			m("div", {style: {textAlign: "center"}},
 				m(control.primitive.editable ? "form" : "div", {
@@ -60,19 +53,13 @@ export function view(control) {
 					},
 				},
 					m("div", {
-						ariaHidden: (control.message == null).toString(),
+						ariaHidden: (control.error == null).toString(),
 						style:      {minHeight: "8rem"},
 					},
-						control.message && m("div", {
-							className: control.message && {
-								error:   "alert alert-danger",
-								success: "alert alert-success",
-							}[control.message.type],
-							role: "alert",
-						}, control.message && {
-							error:   primitive.errorView,
-							success: primitive.successView,
-						}[control.message.type](control.message.body))),
+						control.error && m("div", {
+							className: "alert alert-danger",
+							role:      "alert",
+						}, primitive.errorView(control.error))),
 					m("div", {style: {float: "right"}},
 						primitive.buttonView(control.primitive)),
 					m("h1", {style: {fontSize: "x-large"}},

@@ -24,7 +24,7 @@ import (
 
 type value struct {
 	coding codingIndex
-	q uint
+	q      uint
 }
 
 /*
@@ -35,10 +35,10 @@ type value struct {
 func TestIsWhitespace(t *testing.T) {
 	t.Parallel()
 
-	for _, test := range [...]struct{
+	for _, test := range [...]struct {
 		description string
-		character byte
-		expected bool
+		character   byte
+		expected    bool
 	}{
 		// OWS            = *( SP / HTAB )
 		{`SP`, ' ', true}, {`HTAB`, '\t', true},
@@ -69,8 +69,8 @@ func TestCodings(t *testing.T) {
 func TestParseCodings(t *testing.T) {
 	t.Parallel()
 
-	for _, coding := range [...]struct{
-		coding string
+	for _, coding := range [...]struct {
+		coding        string
 		expectedIndex codingIndex
 	}{
 		/*
@@ -106,7 +106,7 @@ func TestParseCodings(t *testing.T) {
 
 		for _, delimiter := range [...]string{
 			"", ",", ";", " ", "\t",
-		}{
+		} {
 			field := coding.coding + delimiter
 
 			t.Run(field, func(t *testing.T) {
@@ -131,8 +131,8 @@ func TestParseCodings(t *testing.T) {
 func TestParseQvalue(t *testing.T) {
 	t.Parallel()
 
-	for _, qvalue := range [...]struct{
-		field string
+	for _, qvalue := range [...]struct {
+		field     string
 		expectedQ uint
 	}{
 		/*
@@ -147,8 +147,8 @@ func TestParseQvalue(t *testing.T) {
 		{`1.0`, 0x01000000}, {`1.00`, 0x01000000},
 		{`1.000`, 0x01000000},
 	} {
-		for _, delimiter := range [...]struct{
-			field string
+		for _, delimiter := range [...]struct {
+			field          string
 			expectedCursor int
 		}{
 			{``, 0}, {` `, 1}, {`,`, 0},
@@ -179,9 +179,9 @@ func TestParseQvalue(t *testing.T) {
 func TestParseWeight(t *testing.T) {
 	t.Parallel()
 
-	for _, test := range [...]struct{
-		field string
-		expectedQ uint
+	for _, test := range [...]struct {
+		field          string
+		expectedQ      uint
 		expectedCursor int
 	}{
 		// weight = OWS ";" OWS "q=" qvalue
@@ -235,7 +235,7 @@ func TestParseField(t *testing.T) {
 	}
 	for _, test := range [...]string{
 		`,, gzip;q=1, deflate;q=0`, `gzip;q=1, deflate;q=0`,
-	}{
+	} {
 		test := test
 
 		t.Run(test, func(t *testing.T) {

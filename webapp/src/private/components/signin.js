@@ -2,7 +2,7 @@
 	@file signin.js implements the feature to sign in.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/components/signin */
@@ -30,23 +30,19 @@ export function controller() {
 		password: m.prop(""),
 
 		signin() {
-			client.signin(this.id(), this.password()).then(() => {
-				this.deferred.resolve();
-			}, xhr => {
+			client.signin(this.id(), this.password()).then(
+			this.deferred.resolve.bind(this.deferred),
+			xhr => {
 				this.error = xhr.status == 400 ? "残念！！IDもしくはパスワードが違います。" : client.error(xhr);
 				delete this.progress;
-				m.redraw();
 			}, event => {
 				this.progress = {
 					max:   event.total,
 					value: event.loaded,
 				};
-
-				m.redraw();
 			});
 
 			this.progress = {value: 0};
-			m.redraw();
 		},
 	};
 
@@ -105,12 +101,10 @@ export function view(promise) {
 				}), m("input", {
 					className: "btn btn-lg btn-primary btn-block",
 					disabled:  current.progress != null,
-					onclick:   function() {
-						this.signin();
-					}.bind(current),
+					onclick:   current.signin.bind(current),
 					style,
-					type:  "button",
-					value: "Sign in",
+					type:      "button",
+					value:     "Sign in",
 				})
 			)
 		),

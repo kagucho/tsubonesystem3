@@ -18,8 +18,8 @@
 package chanjson
 
 import (
-	`errors`
-	`testing`
+	"errors"
+	"testing"
 )
 
 type result struct {
@@ -30,11 +30,11 @@ type result struct {
 func TestChanJSON(t *testing.T) {
 	t.Parallel()
 
-	for _, test := range [...]struct{
+	for _, test := range [...]struct {
 		description string
-		results []result
-		json string
-		jsonError string
+		results     []result
+		json        string
+		jsonError   string
 	}{
 		/*
 			RFC 7159 - The JavaScript Object Notation (JSON) Data Interchange Format

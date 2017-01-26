@@ -2,7 +2,7 @@
 	@file club.js implements the club component.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/components/app/club */
@@ -18,36 +18,20 @@ import * as client from "../../client";
 import * as container from "../container";
 import * as progress from "../progress";
 import * as table from "../table";
+import ProgressSum from "../../../progress_sum";
 
 export class controller {
 	constructor() {
-		client.clubDetail(m.route.param("id")).then(club => {
+		this.progress = new ProgressSum;
+		this.load();
+	}
+
+	load() {
+		this.progress.add(client.clubDetail(m.route.param("id")).then(club => {
 			this.club = club;
-			m.redraw();
 		}, xhr => {
 			this.error = client.error(xhr) || "どうしようもないエラーが発生しました。";
-			this.endProgress();
-			m.redraw();
-		}, event => {
-			this.updateProgress(event);
-			m.redraw();
-		});
-
-		this.startProgress();
-	}
-
-	startProgress() {
-		this.progress = {value: 0};
-	}
-
-	updateProgress(event) {
-		this.progress = {max: event.total, value: event.loaded};
-	}
-
-	endProgress() {
-		if (this.progress.value != this.progress.max) {
-			delete this.progress;
-		}
+		}));
 	}
 }
 
@@ -66,9 +50,10 @@ export function view(control) {
 	}
 
 	if (control.club) {
-		const startProgress = control.startProgress.bind(control);
-		const updateProgress = control.updateProgress.bind(control);
-		const endProgress = control.endProgress.bind(control);
+		const onloadstart = (function(promise) {
+			this.progress.add(promise.done(
+				submission => submission && this.load()));
+		}).bind(control);
 
 		content.push(m("div",
 			m("h1", {style: {fontSize: "x-large"}},
@@ -77,10 +62,8 @@ export function view(control) {
 				m("h2", {style: {fontSize: "large"}},
 					"部長"),
 				m(table.officers, {
-					members:     [control.club.chief],
-					onloadstart: startProgress,
-					onloadend:   endProgress,
-					onprogress:  updateProgress,
+					members: [control.club.chief],
+					onloadstart,
 				})
 			), m("div",
 				m("h2", {style: {fontSize: "large"}},
@@ -88,17 +71,15 @@ export function view(control) {
 				m("p", {style: {color: "gray"}},
 					control.club.members.length+" 件"),
 				m(table.members, {
-					members:     control.club.members,
-					onloadstart: startProgress,
-					onloadend:   endProgress,
-					onprogress:  updateProgress,
+					members: control.club.members,
+					onloadstart,
 				})
 			)
 		));
 	}
 
 	return [
-		control.progress && m(progress, control.progress),
+		m(progress, control.progress.html()),
 		m(container, m("div", {className: "container"}, content)),
 	];
 }

@@ -5,6 +5,7 @@
 	"rules": {
 		"arrow-parens":                ["warn", "as-needed"],
 		"callback-return":             "off",
+		"capitalized-comments":        "off",
 		"class-methods-use-this":      [
 			"warn", {"exceptMethods": ["controller"]}
 		],
@@ -53,6 +54,7 @@
 		"no-restricted-syntax":        ["warn", "WithStatement"],
 		"no-tabs":                     "off",
 		"no-ternary":                  "off",
+		"no-undefined":                "off",
 		"no-void":                     "off",
 		"object-curly-newline":        "off",
 		"object-property-newline":     "off",
@@ -62,6 +64,7 @@
 			{"overrides": {"?": "after", ":": "after"}}
 		],
 		"padded-blocks":               ["warn", "never"],
+		"prefer-rest-params":          "off",
 		"prefer-template":             "off",
 		"quote-props":                 "off",
 		"require-jsdoc":               "off",

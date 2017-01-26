@@ -2,10 +2,12 @@
 	@file api.js implements a WebAPI interface.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/client/api */
+
+import {ensureRedraw} from "../mithril";
 
 /**
 	ajax returns fetched and decoded JSON.
@@ -16,7 +18,7 @@
 	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
 	fetched JSON.
 */
-const ajax = (uri, method, token, data) => {
+function ajax(uri, method, token, data) {
 	const xhr = new XMLHttpRequest();
 
 	const opts = {
@@ -47,8 +49,8 @@ const ajax = (uri, method, token, data) => {
 
 	jqXHR.then(deferred.resolve, deferred.reject);
 
-	return deferred;
-};
+	return ensureRedraw(deferred);
+}
 
 /**
 	error returns the error message corresponding to jqXHR.
@@ -206,6 +208,17 @@ export function memberDelete(token, id) {
 */
 export function memberUpdate(token, properties) {
 	return ajax("/api/v0/member/update", "POST", token, properties);
+}
+
+/**
+	memberUpdatePassword returns the result of updating the user password.
+	@param {!external:ES.String} token - The access token.
+	@param {!external:ES.Object} properties - The properties to update.
+	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
+	the result.
+*/
+export function memberUpdatePassword(token, properties) {
+	return ajax("/api/v0/member/updatepassword", "POST", token, properties);
 }
 
 /**

@@ -3,7 +3,7 @@
 	members.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/components/member/modal */
@@ -11,6 +11,7 @@
 /**
 	module:private/components/member/modal is a component to show modal
 	dialogs describing members.
+	This component is reusable but NOT reentrant.
 	@name module:private/components/member/modal
 	@type external:Mithril~Component
 */
@@ -20,21 +21,14 @@ import {ensureRedraw} from "../../mithril";
 
 export class controller {
 	constructor() {
+		this.callbacks = {};
 		this.memberAttributes = {
-			onerror:   message => this.messages.push({body: message, type: "error"}),
-			onsuccess: message => this.messages.push({body: message, type: "success"}),
-
 			onemptied: () => {
 				this.finished = true;
 			},
 
-			onloadend: submission => {
-				if (submission) {
-					this.finished = true;
-				}
-
-				this.onloadendCallback();
-			},
+			onloadstart: promise => this.callbacks.onloadstart(
+				promise.catch(this.errors.push.bind(this.errors))),
 
 			onmodalshow: () => {
 				this.shown.next = this.shown.current;
@@ -45,13 +39,13 @@ export class controller {
 		};
 
 		this.primitive = new primitive.controller(this.memberAttributes);
-		this.messages = [];
+		this.errors = [];
 		this.shown = {};
 	}
 
-	onhidden() {
+	finishBody() {
 		if (this.shown.current == "body") {
-			this.onhiddenCallback();
+			this.callbacks.onhidden();
 		}
 	}
 
@@ -59,25 +53,23 @@ export class controller {
 		this.shown.current = this.shown.next;
 		this.shown.next = "body";
 		if (this.finished) {
-			this.onhidden();
+			this.finishBody();
 		}
 	}
 
-	shiftMessage() {
-		this.messages.shift();
-		if (!this.messages.length) {
+	shiftError() {
+		this.errors.shift();
+		if (!this.errors.length) {
 			this.restoreShown();
 		}
 	}
 
 	updateAttributes(attributes) {
-		for (const key of ["id", "onloadstart", "onprogress"]) {
-			this.memberAttributes[key] = attributes[key];
+		for (const key of ["onhidden", "onloadstart"]) {
+			this.callbacks[key] = attributes[key] || $.noop;
 		}
 
-		this.onhiddenCallback = attributes.onhidden;
-		this.onloadendCallback = attributes.onloadend;
-
+		this.memberAttributes.id = attributes.id;
 		this.primitive.updateAttributes(this.memberAttributes);
 
 		if (!this.shown.current) {
@@ -85,8 +77,8 @@ export class controller {
 			this.shown.next = "body";
 		}
 
-		if (this.messages.length) {
-			this.shown.current = "message";
+		if (this.errors.length) {
+			this.shown.current = "error";
 		}
 	}
 }
@@ -97,23 +89,23 @@ export function view(control, attributes) {
 	const body = [
 		m("div", {
 			ariaHidden:     (control.shown.current != "body").toString(),
-			ariaLabelledby: "member-modal-title",
+			ariaLabelledby: "component-member-modal-title",
 			className:      "modal fade",
 			config:         (function(element, initialized, context) {
-				if (!initialized) {
-					context.onunload = (function() {
-						$(this).modal("hide");
-					}).bind(element);
+				const jquery = $(element);
 
-					$(element).on("hidden.bs.modal",
-						this.onhidden.bind(this));
+				if (!initialized) {
+					context.onunload = jquery.modal.bind(jquery, "hide");
+
+					jquery.on("hidden.bs.modal",
+						ensureRedraw.bind(undefined, this.finishBody.bind(this)));
 				}
 
 				if (this.primitive.critical) {
-					$(element).modal({show: false, backdrop: "static"});
+					jquery.modal({show: false, backdrop: "static"});
 				}
 
-				$(element).modal(this.shown.current == "body" ? "show" : "hide");
+				jquery.modal(this.shown.current == "body" ? "show" : "hide");
 			}).bind(control),
 			role:     "dialog",
 			tabindex: "-1",
@@ -129,7 +121,7 @@ export function view(control, attributes) {
 					m("a", {
 						className: "lead modal-title",
 						href:      "#!member?id=" + control.memberAttributes.id,
-						id:        "member-modal-title",
+						id:        "component-member-modal-title",
 					}, primitive.headerView(control.primitive))
 				), m("div", {className: "modal-body"},
 					primitive.bodyView(control.primitive)
@@ -140,36 +132,30 @@ export function view(control, attributes) {
 		)), primitive.modalView(control.primitive),
 	];
 
-	if (control.messages.length) {
+	if (control.errors.length) {
 		body.push(m("div", {
-			ariaHidden:     (control.shown.current != "message").toString(),
-			ariaLabelledBy: "member-modal-message-title",
-			className:      "modal fade",
-			config:         (function(element, initialized, context) {
+			ariaHidden: (control.shown.current != "error").toString(),
+			className:  "modal fade",
+			config:     (function(element, initialized, context) {
+				const jquery = $(element);
+
 				if (!initialized) {
-					context.onunload = (function() {
-						$(this).modal("hide");
-					}).bind(element);
+					context.onunload = jquery.modal.bind(jquery, "hide");
 
-					$(element).on("hidden.bs.modal", () => {
-						if (this.shown.current == "message") {
-							ensureRedraw(this.shiftMessage.bind(this));
-						}
-					});
-
-					$(element).modal("show");
+					jquery.on("hidden.bs.modal",
+						() => this.shown.current == "error" &&
+							ensureRedraw(this.shiftError.bind(this)));
 				}
+
+				jquery.modal("show");
 			}).bind(control),
 			role:     "dialog",
 			tabindex: "-1",
 		}, m("div", {className: "modal-dialog", role: "document"},
 			m("div", {className: "modal-content"},
 				m("div", {className: "modal-body"},
-					{
-						error:   primitive.errorView,
-						success: primitive.successView,
-					}[control.messages[0].type](control.messages[0].body)
-				), m("div", {className: "modal-footer"},
+					primitive.errorView(control.errors[0])),
+				m("div", {className: "modal-footer"},
 					m("button", {
 						className:      "btn btn-default",
 						type:           "button",

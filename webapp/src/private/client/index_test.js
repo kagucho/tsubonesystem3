@@ -2,7 +2,7 @@
 	@file index_test.js implements a testing code for index.js.
 	@author Akihiko Odaki  <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/client_test */
@@ -10,30 +10,31 @@
 import * as client from "./index";
 
 describe("module:client", () => {
-	const signinPromise = client.signin("1stDisplayId", "1stPassword");
+	const signinPromise = client.signin("1stDisplayID", "1stPassword");
 
 	describe("signin", () => {
-		it("should return a successful promise", done => signinPromise.done(done));
+		it("should return a successful promise",
+			signinPromise.done.bind(signinPromise));
 
 		it("should set refresh_token to sessionStorage", function(done) {
 			signinPromise.then(() => {
 				const result = sessionStorage.getItem("refresh_token");
 				done(result ? null : new Error("got "+JSON.stringify(result)));
-			}, () => this.skip());
+			}, this.skip.bind(this));
 		});
 	});
 
 	describe("memberUpdate", () => it("should reject with invalid entrance", function(done) {
 		signinPromise.then(() => {
 			client.memberUpdate({entrance: "0"}).then(
-			() => done(new Error("unexpected resolution")),
+			done.bind(undefined, new Error("unexpected resolution")),
 			xhr => {
 				const expected = "value out of range";
 				done(xhr.responseJSON.error_description != expected &&
 					new Error("expected \""+xhr.responseJSON.error_description+
 						"\", got \""+expected+"\""));
 			});
-		}, () => this.skip());
+		}, this.skip.bind(this));
 	}));
 
 	describe("recoverSession", () => {
@@ -43,7 +44,7 @@ describe("module:client", () => {
 		it("should return a successful promise", function(done) {
 			signinPromise.then(
 				() => recoverPromise.done(done),
-				() => this.skip());
+				this.skip.bind(this));
 		});
 	});
 
@@ -178,14 +179,14 @@ describe("module:client", () => {
 					signinPromise.then(
 						() => staticPromise.then(
 							() => done(), done),
-						() => this.skip());
+						this.skip.bind(this));
 				});
 
 				it("should return a promise resolved with " + expected, function(done) {
 					staticPromise.then(data => {
 						const result = JSON.stringify(data);
 						done(result == expected ? null : "got " + result);
-					}, () => this.skip());
+					}, this.skip.bind(this));
 				});
 			});
 		}).bind(test);

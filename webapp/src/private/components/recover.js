@@ -2,7 +2,7 @@
 	@file recover.js implements the feature to recover the session.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/components/recover */
@@ -28,7 +28,6 @@ export function controller() {
 
 	promise.progress(function(event) {
 		boundProgress.set(this, {max: event.total, value: event.loaded});
-		m.redraw();
 	}.bind(promise));
 
 	return promise;

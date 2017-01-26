@@ -18,59 +18,21 @@
 module.exports = function(source) {
 	this.cacheable();
 
-	let destination;
-	let destinationIndex;
+	const sourceBuffer = Buffer.isBuffer(source) ? source : new Buffer(source);
+	const destination = new Buffer(source.length * 2);
+	let destinationIndex = 0;
 
-	if (this.loaderIndex + 1 == this.loaders.length) {
-		const prefix = "module.exports = \"";
-		const suffix = "\";";
-
-		destination = new Buffer(prefix.length + source.length * 4 + suffix.length);
-		destinationIndex = destination.write(prefix);
-
-		for (let sourceIndex = 0; sourceIndex < source.length; sourceIndex++) {
-			switch (source[sourceIndex]) {
-			case 10:
-				destinationIndex += destination.write("\\r\\n", destinationIndex);
-				break;
-
-			case 34:
-				destinationIndex += destination.write("\\\"", destinationIndex);
-				break;
-
-			case 92:
-				destinationIndex += destination.write("\\\\", destinationIndex);
-				break;
-
-			default:
-				if (source[sourceIndex] < 32) {
-					this.emitError("invalid character "+source[sourceIndex]+" at "+sourceIndex);
-					return;
-				}
-
-				destination[destinationIndex] = source[sourceIndex];
-				destinationIndex++;
-				break;
-			}
-		}
-
-		destinationIndex += destination.write(suffix, destinationIndex);
-	} else {
-		destination = new Buffer(source.length * 2);
-		destinationIndex = 0;
-
-		for (let sourceIndex = 0; sourceIndex < source.length; sourceIndex++) {
-			if ((source[sourceIndex] != 92 || source[sourceIndex] != 114) &&
-				source[sourceIndex] == 92 && source[sourceIndex + 1] == 110) {
-				destinationIndex += destination.write("\\r", destinationIndex);
-			}
-
-			destination[destinationIndex] = source[sourceIndex];
+	for (let sourceIndex = 0; sourceIndex < sourceBuffer.length; sourceIndex++) {
+		if (sourceBuffer[sourceIndex] == 10) {
+			destination[destinationIndex] = 13;
 			destinationIndex++;
 		}
+
+		destination[destinationIndex] = sourceBuffer[sourceIndex];
+		destinationIndex++;
 	}
 
 	return destination.slice(0, destinationIndex);
-}
+};
 
 module.exports.raw = true;

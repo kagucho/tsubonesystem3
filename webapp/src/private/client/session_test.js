@@ -2,7 +2,7 @@
 	@file session_test.js implements a testing code for session.js.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
  */
 
 /** @module private/client/session_test */
@@ -27,13 +27,13 @@ describe("module:session", () => {
 		it("should return a successful promise", function(done) {
 			signinPromise.then(
 				() => tokenPromise.then(() => done(), done),
-				() => this.skip());
+				this.skip.bind(this));
 		});
 
 		it("should give callback access_token", function(done) {
 			tokenPromise.then(
 				token => done(token ? null : Error("got "+JSON.stringify(token))),
-				() => this.skip());
+				this.skip.bind(this));
 		});
 	});
 
@@ -57,7 +57,7 @@ describe("module:session", () => {
 				$.Deferred().resolve(token).promise()
 			)).then(
 				token => done(token ? null : new Error("got "+JSON.stringify(token))),
-				() => this.skip());
+				this.skip.bind(this));
 		});
 
 		it("should allow to get ID with getID", function(done) {
@@ -66,7 +66,7 @@ describe("module:session", () => {
 				const result = recovering.getID();
 
 				done(result != expected && new Error("expected \"" + expected + "\", got \"" + result + "\""));
-			}, () => this.skip());
+			}, this.skip.bind(this));
 		});
 	});
 
@@ -77,7 +77,7 @@ describe("module:session", () => {
 		it("should set refresh_token to sessionStorage", function(done) {
 			signinPromise.then(
 				() => sessionPromise.then(() => done(), done),
-				() => this.skip());
+				this.skip.bind(this));
 		});
 
 		it("should allow to get ID with getID", function(done) {
@@ -86,7 +86,7 @@ describe("module:session", () => {
 				const result = session.getID();
 
 				done(result != expected && new Error("expected \"" + expected + "\", got \"" + result + "\""));
-			}, () => this.skip());
+			}, this.skip.bind(this));
 		});
 	});
 });

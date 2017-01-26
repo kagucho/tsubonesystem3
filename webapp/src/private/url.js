@@ -2,7 +2,7 @@
 	@file url.js implements URL encoders.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 	@see {@link https://tools.ietf.org/html/rfc7595|
 		RFC 7595 - Guidelines and Registration Procedures for URI Schemes}
 */
@@ -16,9 +16,7 @@
 	@see {@link https://tools.ietf.org/html/rfc6068|
 		RFC 6068 - The 'mailto' URI Scheme}
 */
-export function mailto(address) {
-	return "mailto:" + encodeURIComponent(address);
-}
+export const mailto = address => "mailto:" + encodeURIComponent(address);
 
 /**
 	tel returns the URL of the given telphone number.
@@ -27,6 +25,4 @@ export function mailto(address) {
 	@see {@link https://tools.ietf.org/html/rfc3966|
 		RFC 3966 - The tel URI for Telephone Numbers}
 */
-export function tel(number) {
-	return "tel:" + number.replace(/^0(?!-)/, "+81-");
-}
+export const tel = number => "tel:" + number.replace(/^0(?!-)/, "+81-");

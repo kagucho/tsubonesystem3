@@ -2,7 +2,7 @@
 	@file index.js implements the index of the slides for the private page.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 import sakuraDrawing from "./sakura_drawing.jpg";

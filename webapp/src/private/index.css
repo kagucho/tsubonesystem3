@@ -15,20 +15,20 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-.form-control {
-	left: 0;
+.component-app-members-cell {
+	padding: 1rem;
 }
 
-.member {
+.component-member-cell {
 	vertical-align: middle;
 }
 
-.member-data {
+.component-member-data {
 	display: inline-block;
 }
 
-.members-cell {
-	padding: 1rem;
+.form-control {
+	left: 0;
 }
 
 .navbar-nav a {
@@ -44,7 +44,7 @@
 	border: hidden;
 }
 
-@keyframes progress {
+@keyframes component-progress-animation {
 	from {
 		height: .2rem;
 	}
@@ -55,17 +55,21 @@
 }
 
 @media all and (max-width: 32rem) {
-	.member, .members-cell {
+	.component-app-members-cell, .component-member-cell {
 		display: block;
 	}
 }
 
 @media all and (min-width: 32rem) {
-	.member-data {
+	.component-app-members-cell {
+		display: table-cell;
+	}
+
+	.component-member-data {
 		padding-top: 2rem;
 	}
 
-	.members-cell {
-		display: table-cell;
+	.component-password-record {
+		white-space: nowrap;
 	}
 }

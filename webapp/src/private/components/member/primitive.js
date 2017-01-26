@@ -3,15 +3,17 @@
 	member.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/components/member/primitive */
 
 import * as affiliation from "../../affiliation";
 import * as client from "../../client";
+import * as password from "../password/modal";
 import * as url from "../../url";
 import {ensureRedraw} from "../../mithril";
+import large from "../../large";
 
 /**
 	modal returns a view of a modal dialog.
@@ -27,15 +29,16 @@ const modal = (show, onhidden, options, content) => m("div", $.extend({
 	ariaHidden: show.toString(),
 	className:  "modal fade",
 	config:     (function(element, initialized, context) {
-		if (!initialized) {
-			context.onunload = (function() {
-				$(this).modal("hide");
-			}).bind(element);
+		const jquery = $(element);
 
-			$(element).on("hidden.bs.modal", this.onhidden);
+		if (!initialized) {
+			context.onunload = jquery.modal.bind(jquery, "hide");
+
+			jquery.on("hidden.bs.modal",
+				ensureRedraw.bind(undefined, this.onhidden));
 		}
 
-		$(element).modal(this.show ? "show" : "hide");
+		jquery.modal(this.show ? "show" : "hide");
 	}).bind({onhidden, show}),
 	role:     "dialog",
 	tabindex: "-1",
@@ -66,19 +69,22 @@ class State {
 		new state.
 	*/
 	constructor() {
+		this.callbacks = {};
 		this.member = {current: {}, updated: {}};
 
 		this.modal = {
 			messages: {},
 
-			cancel() {
-				delete this.showing;
-				this.onhide();
+			cancel(type) {
+				if (type == this.showing) {
+					delete this.showing;
+					this.callbacks.onhide();
+				}
 			},
 
 			show(type, message) {
 				if (!this.showing) {
-					this.onshow();
+					this.callbacks.onshow();
 				}
 
 				this.showing = type;
@@ -87,24 +93,6 @@ class State {
 		};
 
 		this.validity = {};
-	}
-
-	/**
-		fail notifies the error.
-		@param {!external:ES.String} message - The message.
-		@returns {external:ES~Undefined}
-	*/
-	fail(message) {
-		ensureRedraw(() => this.onerror(message));
-	}
-
-	/**
-		failXHR notifies the error in an XHR.
-		@param {!external:jQuery~jqXHR} xhr - An XHR with an error.
-		@returns {external:ES~Undefined}
-	*/
-	failXHR(xhr) {
-		this.fail(xhrError(xhr));
 	}
 
 	/**
@@ -120,7 +108,9 @@ class State {
 		}
 
 		if (chief || this.member.current.positions.length) {
-			this.fail("役職に就いている局員は削除できません。");
+			this.modal.show("done", {
+				body: "役職に就いている局員は削除できません。",
+			});
 		} else {
 			this.modal.show("prompting", {
 				body:    "よく狙え。お前は1人の人間を殺すのだ。",
@@ -134,15 +124,10 @@ class State {
 
 	/**
 		submit submits the updated properties of the member.
-		@param {!module:private/components/member/primitive~Oncriticalstart}
-		oncriticalstart - The function which will be called back when
-		the critical session starts.
-		@param {!module:private/components/member/primitive~Oncriticalend}
-		oncriticalend - The function which will be called back when the
-		critical sesion ends.
+		@param {!external:ES.Object} callback - TODO
 		@returns {external:ES~Undefined}
 	*/
-	submit(oncriticalstart, oncriticalend) {
+	submit(callback) {
 		const param = {};
 
 		for (const key in this.member.updated) {
@@ -150,24 +135,11 @@ class State {
 				param[key] = this.member.updated[key];
 			}
 		}
-		
+
 		let clientSubmit;
-		let done;
 
 		if (this.member.id == null) {
 			clientSubmit = client.memberCreate;
-			done = function() {
-				this.oncriticalend();
-				delete this.state.member.id;
-
-				this.state.onloadend(true);
-
-				this.state.modal.show("done", {
-					body:    "送信しました",
-					leave:   this.state.leaveOnInvalid,
-					success: true,
-				});
-			};
 		} else {
 			let clubsChanged = false;
 			for (let index = 0; index < this.clubsUpdated.length; index++) {
@@ -187,29 +159,20 @@ class State {
 			}
 
 			clientSubmit = client.memberUpdate;
-			done = function() {
-				this.oncriticalend();
-
-				this.state.onsuccess("送信しました");
-				this.state.onloadend(true);
-
-				this.state.member.current = $.extend({}, this.state.member.updated);
-				this.state.clubsCurrent = Array.from(this.state.clubsUpdated);
-			};
 		}
 
-		return clientSubmit(param).then(
-			() => ensureRedraw(done.bind({oncriticalend, state: this})),
-			xhr => ensureRedraw((function() {
-				this.oncriticalend();
-				this.state.onloadend();
-				this.state.failXHR(xhr);
-			})({oncriticalend, state: this})),
-			progressEvent => ensureRedraw(() => this.onprogress(progressEvent))
-		);
+		this.callbacks.onloadstart(callback(clientSubmit(param).then(response => {
+			this.member.current = $.extend({}, this.member.updated);
+			this.clubsCurrent = Array.from(this.clubsUpdated);
 
-		oncriticalstart();
-		this.onloadstart();
+			const message = response.error == "mail_failure" ?
+				{body: "メールの送信に失敗しました。メールアドレスを確認して下さい。"} :
+				{body: "送信しました", success: true};
+
+			this.modal.show("done", message);
+
+			return message.success;
+		}, xhr => this.state.modal.show("done", {body: xhrError(xhr)}))));
 	}
 
 	/**
@@ -217,23 +180,14 @@ class State {
 		@returns {external:ES~Undefined}
 	*/
 	submitDeletion() {
-		client.memberDelete(this.member.id).then(() => ensureRedraw(() => {
-			this.onloadend(true);
+		this.modal.show("inprogress", {body: "始末しています…"});
 
-			this.modal.show("done", {
-				body:    "始末しました",
-				leave:   this.leaveOnInvalid,
-				success: true,
-			});
-		}), xhr => ensureRedraw(() => {
-			this.modal.show("done", {body: xhrError(xhr)});
-			this.onloadend();
-		}), event => ensureRedraw(() => this.onprogress(event)));
-
-		this.modal.showing = "inprogress";
-		this.modal.messages.inprogress = {body: "始末しています…"};
-
-		this.onloadstart();
+		this.callbacks.onloadstart(client.memberDelete(this.member.id).then(
+		() => this.modal.show("done", {
+			body:    "始末しました",
+			leave:   this.leaveOnInvalid,
+			success: true,
+		}), xhr => this.modal.show("done", {body: xhrError(xhr)})));
 	}
 
 	/**
@@ -255,22 +209,16 @@ class State {
 		@returns {external:ES~Undefined}
 	*/
 	submitOBDeclaration() {
-		client.memberDeclareOB().then(() => ensureRedraw(() => {
-			this.onloadend(true);
+		this.modal.show("inprogress", {body: "送信しています…"});
 
+		this.callbacks.onloadstart(client.memberDeclareOB().then(() => {
 			this.modal.show("done", {
 				body:    "送信しました",
 				success: true,
 			});
 
 			this.member.ob = true;
-		}), xhr => ensureRedraw(() => {
-			this.modal.show("done", {body: xhrError(xhr)});
-			this.onloadend();
-		}), event => ensureRedraw(() => this.onprogress(event)));
-
-		this.modal.show("inprogress", {body: "送信しています…"});
-		this.onloadstart();
+		}, xhr => this.modal.show("done", {body: xhrError(xhr)})));
 	}
 
 	/**
@@ -294,16 +242,15 @@ class State {
 		@returns {external:ES~Undefined}
 	*/
 	updateAttributes(attributes) {
-		for (const key of [
-			"onerror", "onsuccess", "onloadstart", "onloadend",
-			"onemptied", "onprogress",
-		]) {
-			this[key] = attributes[key] || $.noop;
+		for (const key of ["onloadstart", "onemptied"]) {
+			this.callbacks[key] = attributes[key] || $.noop;
 		}
 
 		this.leaveOnInvalid = attributes.leaveOnInvalid;
-		this.modal.onhide = attributes.onmodalhide || $.noop;
-		this.modal.onshow = attributes.onmodalshow || $.noop;
+		this.modal.callbacks = {
+			onhide: attributes.onmodalhide || $.noop,
+			onshow: attributes.onmodalshow || $.noop,
+		};
 
 		this.updateMember(attributes.id);
 	}
@@ -362,19 +309,18 @@ class State {
 		if (id == null) {
 			if (!management) {
 				this.member.id = "?";
+
 				return;
 			}
 
-			memberDetail = $.Deferred().resolve();
-
 			this.member.current = {
-				realname: "",
-				gender: "",
-				mail: "",
-				tel: "",
-				clubs: [],
+				realname:    "",
+				gender:      "",
+				mail:        "",
+				tel:         "",
+				clubs:       [],
 				affiliation: "",
-				entrance: new Date().getFullYear(),
+				entrance:    new Date().getFullYear(),
 			};
 			$.extend(this.member.updated, this.member.current);
 
@@ -383,30 +329,24 @@ class State {
 			this.member.updated.nickname = "";
 
 			this.editable = true;
+
+			memberDetail = $.Deferred().resolve();
 		} else {
+			const context = {control: this, id: this.member.id};
+
 			memberDetail = client.memberDetail(this.member.id).then((function(member) {
 				if (this.control.member.id == this.id) {
-					ensureRedraw(() => {
-						this.control.onloadend();
-
-						this.control.member.current = member;
-						$.extend(this.control.member.updated, member);
-					});
+					this.control.member.current = member;
+					$.extend(this.control.member.updated, member);
 				}
-			}).bind({control: this, id: this.member.id}), (function(xhr) {
+			}).bind(context), (function(xhr) {
 				if (this.control.member.id == this.id) {
-					ensureRedraw(() => {
-						this.control.onemptied();
-						this.control.onloadend();
+					this.control.callbacks.onemptied();
+					throw xhrError(xhr);
+				}
+			}).bind(context));
 
-						this.control.failXHR(xhr);
-					});
-				}
-			}).bind({control: this, id: this.member.id}), (function(event) {
-				if (this.control.member.id == this.id) {
-					ensureRedraw(() => this.control.onprogress(event));
-				}
-			}).bind({control: this, id: this.member.id}));
+			this.callbacks.onloadstart(memberDetail);
 
 			this.editable = this.member.id == client.getID();
 			this.deletable = management && !this.editable;
@@ -414,14 +354,15 @@ class State {
 
 		if (this.editable) {
 			if (!this.clubListName) {
-				this.clubListName = client.clubListName().done(clubs => {
+				this.clubListName = client.clubListName().then(clubs => {
 					this.clubs = clubs;
-					m.redraw();
+				}, xhr => {
+					throw xhrError(xhr);
 				});
 
-				this.clubListName.catch(this.failXHR.bind(this));
+				this.callbacks.onloadstart(this.clubListName);
 
-				client.memberList().then(members => {
+				this.callbacks.onloadstart(client.memberList().then(members => {
 					this.members = members;
 
 					affiliation.update(new Set((function *() {
@@ -429,9 +370,9 @@ class State {
 							yield member.affiliation;
 						}
 					})()));
-
-					m.redraw();
-				}, this.failXHR.bind(this));
+				}, xhr => {
+					throw xhrError(xhr);
+				}));
 			}
 
 			$.when(memberDetail, this.clubListName).done((function() {
@@ -447,13 +388,9 @@ class State {
 					});
 
 					this.control.clubsUpdated = Array.from(this.control.clubsCurrent);
-
-					m.redraw();
 				}
 			}).bind({control: this, id: this.member.id}));
 		}
-
-		this.onloadstart();
 	}
 
 	/**
@@ -501,12 +438,10 @@ function controlSubmit(event) {
 		return;
 	}
 
-	state.get(this).submit(() => {
-		this.critical = true;
-	}, () => {
-		this.critical = false;
-	});
-};
+	state.get(this).submit(promise => (this.critical = promise.always(() => {
+		delete this.critical;
+	})));
+}
 
 /**
 	controller returns a new control in the MVC architecture.
@@ -515,11 +450,11 @@ function controlSubmit(event) {
 export function controller() {
 	const controlState = new State;
 	const control = Object.defineProperties({}, {
-		critical: {},
+		critical: {writable: true},
 
 		updateAttributes: {
 			value: controlState.updateAttributes.bind(controlState),
-		}
+		},
 	});
 
 	state.set(control, controlState);
@@ -534,7 +469,7 @@ export function controller() {
 	@returns {!external:Mithril~Children} The view.
 */
 export function headerView(control) {
-	const nickname = state.get(control).member.current.nickname;
+	const {nickname} = state.get(control).member.current;
 
 	return (nickname == null ? "?" : nickname)+"ちゃんの詳細情報";
 }
@@ -559,21 +494,19 @@ export function bodyView(control) {
 		const nickname = {
 			th: m("label", $.extend({
 				className: "control-label",
-				htmlFor:   "member-nickname",
+				htmlFor:   "component-member-nickname",
 			}, headerAttributes), "ニックネーム"),
 			td: m("input", controlState.member.updated.nickname == null ? {
 				disabled: true,
 			} : {
 				className: "form-control",
-				id:        "member-nickname",
+				id:        "component-member-nickname",
 				maxlength: "63",
-				onblur:    controlState.updateNickname.bind(controlState),
-				oninvalid: (function(event) {
-					this.updateValidity("nickname", event);
-				}).bind(controlState),
-				required: true,
-				style:    {display: "inline"},
-				value:    controlState.member.updated.nickname,
+				onchange:  controlState.updateNickname.bind(controlState),
+				oninvalid: controlState.updateValidity.bind(controlState, "nickname"),
+				required:  true,
+				style:     {display: "inline"},
+				value:     controlState.member.updated.nickname,
 			}),
 			validity: controlState.validity.nickname,
 		};
@@ -581,24 +514,20 @@ export function bodyView(control) {
 		const mail = {
 			th: m("label", $.extend({
 				className: "control-label",
-				htmlFor:   "member-mail",
+				htmlFor:   "component-member-mail",
 			}, headerAttributes), "メールアドレス"),
 			td: m("input", controlState.member.updated.mail == null ? {
 				disabled: true,
 			} : {
 				className: "form-control",
-				id:        "member-mail",
+				id:        "component-member-mail",
 				maxlength: "255",
-				onblur:    (function(event) {
-					this.update("mail", event);
-				}).bind(controlState),
-				oninvalid: (function(event) {
-					this.updateValidity("mail", event);
-				}).bind(controlState),
-				required: true,
-				style:    {display: "inline"},
-				type:     "email",
-				value:    controlState.member.updated.mail,
+				onchange:  controlState.update.bind(controlState, "mail"),
+				oninvalid: controlState.updateValidity.bind(controlState, "mail"),
+				required:  true,
+				style:     {display: "inline"},
+				type:      "email",
+				value:     controlState.member.updated.mail,
 			}),
 			validity: controlState.validity.mail,
 		};
@@ -607,16 +536,15 @@ export function bodyView(control) {
 			{
 				th: m("label", $.extend({
 					className: "control-label",
-					htmlFor:   "member-id",
+					htmlFor:   "component-member-id",
 				}, headerAttributes), "ID"),
 				td: m("input", {
 					className: "form-control",
-					id:        "member-id",
+					id:        "component-member-id",
 					maxlength: "63",
-					onblur:    controlState.updateID.bind(controlState),
-					oninvalid: (function(event) {
-						this.updateValidity("id", event);
-					}).bind(controlState),
+					onchange:  controlState.updateID.bind(controlState),
+					oninvalid: controlState.updateValidity(controlState, "id"),
+
 					/*
 						URL Standard
 						5.2. application/x-www-form-urlencoded serializing
@@ -634,11 +562,12 @@ export function bodyView(control) {
 
 						Accept only those characters.
 					*/
-					pattern:   "[*\\-.\\w]*",
-					required:  true,
-					style:     {display: "inline"},
-					title:     "英数字と次の記号 \"*\" \"-\" \".\" \"_\"",
-					value:     controlState.member.updated.id,
+					pattern: "[*\\-.\\w]*",
+
+					required: true,
+					style:    {display: "inline"},
+					title:    "英数字と次の記号 \"*\" \"-\" \".\" \"_\"",
+					value:    controlState.member.updated.id,
 				}),
 				validity: controlState.validity.id,
 			},
@@ -647,72 +576,75 @@ export function bodyView(control) {
 		] : [
 			{
 				th: m("div", headerAttributes, "ID"),
-				td: controlState.member.id == null ?
-					"?" : controlState.member.id,
+				td: controlState.member.id,
+			},
+			{
+				th: m("div", headerAttributes, "パスワード"),
+				td: m("a", {
+					className: "btn btn-primary",
+					href:      "#!password",
+					onclick:   (function() {
+						if (large()) {
+							this.show("password");
+
+							return false;
+						}
+					}).bind(controlState.modal),
+				}, "パスワードを変更する"),
 			},
 			nickname,
 			{
 				th: m("label", $.extend({
 					className: "control-label",
-					htmlFor:   "member-realname",
+					htmlFor:   "component-member-realname",
 				}, headerAttributes), "名前"),
 				td: m("input", controlState.member.updated.realname == null ? {
 					disabled: true,
 				} : {
 					className: "form-control",
-					id:        "member-realname",
+					id:        "component-member-realname",
 					maxlength: "63",
-					onblur:    (function(event) {
-						this.update("realname", event);
-					}).bind(controlState),
-					oninvalid: (function(event) {
-						this.updateValidity("realname", event);
-					}).bind(controlState),
-					required: true,
-					style:    {display: "inline"},
-					value:    controlState.member.updated.realname,
+					onchange:  controlState.update.bind(controlState, "realname"),
+					oninvalid: controlState.updateValidity.bind(controlState, "realname"),
+					required:  true,
+					style:     {display: "inline"},
+					value:     controlState.member.updated.realname,
 				}),
 				validity: controlState.validity.realname,
 			}, {
 				th: m("label", $.extend({
 					className: "control-label",
-					htmlFor:   "member-gender",
+					htmlFor:   "component-member-gender",
 				}, headerAttributes), "性別"),
 				td: m("input", controlState.member.updated.gender == null ? {
 					disabled: true,
 				} : {
 					className: "form-control",
-					id:        "member-gender",
+					id:        "component-member-gender",
 					list:      "gender",
 					maxlength: "63",
-					onblur:    (function(event) {
-						this.update("gender", event);
-					}).bind(controlState),
-					oninvalid: (function(event) {
-						this.updateValidity("gender", event);
-					}).bind(controlState),
-					style: {display: "inline"},
-					value: controlState.member.updated.gender,
+					onchange:  controlState.update.bind(controlState, "gender"),
+					oninvalid: controlState.updateValidity.bind(controlState, "gender"),
+					style:     {display: "inline"},
+					value:     controlState.member.updated.gender,
 				}),
 				validity: controlState.validity.gender,
 			},
+			mail,
 			{
 				th: m("label", $.extend({
 					className: "control-label",
-					htmlFor:   "member-tel",
+					htmlFor:   "component-member-tel",
 				}, headerAttributes), "電話番号"),
 				td: m("input", controlState.member.updated.tel == null ? {
 					disabled: true,
 				} : {
 					className: "form-control",
-					id:        "member-tel",
+					id:        "component-member-tel",
 					maxlength: "255",
-					onblur:    (function(event) {
-						this.update("tel", event);
-					}).bind(controlState),
-					oninvalid: (function(event) {
-						this.updateValidity("tel", event);
-					}).bind(controlState),
+					onchange:  controlState.update.bind(controlState, "tel"),
+					oninvalid: controlState.updateValidity.bind(controlState, "tel"),
+
 					/*
 						RFC 3986 - Uniform Resource Identifier (URI): Generic Syntax
 						https://tools.ietf.org/html/rfc3986#section-2
@@ -720,7 +652,8 @@ export function bodyView(control) {
 
 						Allow characters valid in hier-part.
 					*/
-					pattern:  "[!$&'()*+,\\-.;=~\\w]*",
+					pattern: "[!$&'()*+,\\-.;=~\\w]*",
+
 					required: true,
 					style:    {display: "inline"},
 					title:    "英数字と次の記号 \"!\" \"$\" \"&\" \"'\" \"(\" \")\" \"*\" \"+\" \",\" \"-\" \".\" \"/\" \";\" \"=\" \"~\"",
@@ -752,48 +685,40 @@ export function bodyView(control) {
 			}, {
 				th: m("label", $.extend({
 					className: "control-label",
-					htmlFor:   "member-affiliation",
+					htmlFor:   "component-member-affiliation",
 				}, headerAttributes), "学科"),
 				td: m("input", controlState.member.updated.affiliation == null ? {
 					disabled: true,
 				} : {
 					className: "form-control",
-					id:        "member-affiliation",
+					id:        "component-member-affiliation",
 					list:      affiliation.id,
 					maxlength: "63",
-					onblur:    (function(event) {
-						this.update("affiliation", event);
-					}).bind(controlState),
-					oninvalid: (function(event) {
-						this.updateValidity("affiliation", event);
-					}).bind(controlState),
-					required: true,
-					style:    {display: "inline"},
-					value:    controlState.member.updated.affiliation,
+					onchange:  controlState.update.bind(controlState, "affiliation"),
+					oninvalid: controlState.updateValidity(controlState, "affiliation"),
+					required:  true,
+					style:     {display: "inline"},
+					value:     controlState.member.updated.affiliation,
 				}),
 				validity: controlState.validity.affiliation,
 			}, {
 				th: m("label", $.extend({
 					className: "control-label",
-					htmlFor:   "member-entrance",
+					htmlFor:   "component-member-entrance",
 				}, headerAttributes), "入学年度"),
 				td: m("input", controlState.member.updated.entrance == null ? {
 					disabled: true,
 				} : {
 					className: "form-control",
-					id:        "member-entrance",
+					id:        "component-member-entrance",
 					max:       "2155",
 					min:       "1901",
-					onblur:    (function(event) {
-						this.update("entrance", event);
-					}).bind(controlState),
-					oninvalid: (function(event) {
-						this.updateValidity("entrance", event);
-					}).bind(controlState),
-					required: true,
-					style:    {display: "inline"},
-					type:     "number",
-					value:    controlState.member.updated.entrance,
+					onchange:  controlState.update.bind(controlState, "entrance"),
+					oninvalid: controlState.updateValidity.bind(controlState, "entrance"),
+					required:  true,
+					style:     {display: "inline"},
+					type:      "number",
+					value:     controlState.member.updated.entrance,
 				}),
 				validity: controlState.validity.entrance,
 			}, {
@@ -875,15 +800,15 @@ export function bodyView(control) {
 		}, records.map(object => object && m("tr",
 			object.validity ? {className: "has-error"} : {},
 			m("th", {
-				className: "member",
+				className: "component-member-cell",
 				style:     {
 					paddingTop: "2rem",
 					width:      "16rem",
 				},
 			}, object.th),
-			m("td", {className: "member"},
+			m("td", {className: "component-member-cell"},
 				m("div", {
-					className: "member-data",
+					className: "component-member-data",
 				}, object.td),
 				" ",
 				m("div", {
@@ -933,7 +858,7 @@ export function errorView(message) {
 	@param {?external:ES.String} message - The success message.
 	@returns {!external:Mithril~Children} The view.
 */
-export function successView(message) {
+function successView(message) {
 	return [
 		m("span", {ariaHidden: "true"},
 			m("span", {className: "glyphicon glyphicon-ok"}),
@@ -951,71 +876,91 @@ export function successView(message) {
 export function modalView(control) {
 	const controlState = state.get(control);
 
-	return [
-		(() => {
-			const message = controlState.modal.messages.prompting;
-			if (!message) {
-				return;
-			}
+	const newCanceller =
+		type => controlState.modal.cancel.bind(controlState.modal, type);
 
-			const show = controlState.modal.showing == "prompting";
-			const cancel = controlState.modal.cancel.bind(controlState.modal);
-
-			return modal(show, cancel, {
-				ariaLabelledby: "member-removal-title",
+	const view = [
+		controlState.modal.messages.prompting && modal(
+			controlState.modal.showing == "prompting",
+			newCanceller("prompting"), {
+				ariaLabelledby: "component-member-removal-title",
 				tabindex:       "-1",
 			}, [
 				m("div", {className: "modal-header"},
 					m("button", {
-						ariaLabel: "閉じる",
-						className: "close",
-						onclick:   cancel,
-						type:      "button",
+						ariaLabel:      "閉じる",
+						className:      "close",
+						type:           "button",
+						"data-dismiss": "modal",
 					}, m("span", {ariaHidden: "true"}, "×")),
 					m("div", {
 						className: "lead modal-title",
-						id:        "member-removal-title",
+						id:        "component-member-removal-title",
 					}, "確認")
 				),
 				m("div", {className: "modal-body"},
-					message.body),
+					controlState.modal.messages.prompting.body),
 				m("div", {className: "modal-footer"},
 					m("button", {
-						className: "btn btn-default",
-						type:      "button",
-						onclick:   cancel,
+						className:      "btn btn-default",
+						type:           "button",
+						"data-dismiss": "modal",
 					}, "やっぱやめた"),
 					m("button", {
 						className: "btn btn-danger btn-pirmary",
-						onclick:   message.proceed.action,
-					}, message.proceed.label)
-				),
-			]);
-		})(),
-		modal(controlState.modal.showing == "inprogress", null, {
-			"data-backdrop": "static",
-		}, m("div", {className: "modal-body"},
-			controlState.modal.messages.inprogress &&
-				controlState.modal.messages.inprogress.body)),
-		controlState.modal.messages.done && modal(
-			controlState.modal.showing == "done",
-			controlState.modal.messages.done.leave && (() => m.route("")),
-			{tabindex: "-1"}, [
-				m("div", {className: "modal-body"},
-					(controlState.modal.messages.success ? successView : errorView)(
-						controlState.modal.messages.done.body)
-				), m("div", {className: "modal-footer"},
-					controlState.modal.messages.done.leave ? m("a", {
-						className: "btn btn-default",
-						href:      "#",
-					}, "トップページへ") : m("button", {
-						className:      "btn btn-default",
-						"data-dismiss": "modal",
-					}, "閉じる")
+						onclick:   controlState.modal.messages.prompting.proceed.action,
+					}, controlState.modal.messages.prompting.proceed.label)
 				),
 			]
+		), modal(controlState.modal.showing == "inprogress", null,
+			{"data-backdrop": "static"},
+			m("div", {className: "modal-body"},
+				controlState.modal.messages.inprogress &&
+					controlState.modal.messages.inprogress.body
+			)
 		),
 	];
+
+	if (controlState.modal.showing == "password") {
+		view.push(m(password, {
+			onhidden:    newCanceller("password"),
+			onloadstart: controlState.callbacks.onloadstart,
+		}));
+	}
+
+	if (controlState.modal.messages.done) {
+		let onhidden;
+		let dismiss;
+
+		if (!controlState.modal.messages.done.leave) {
+			onhidden = newCanceller("done");
+			dismiss = m("button", {
+				className:      "btn btn-default",
+				"data-dismiss": "modal",
+			}, "閉じる");
+		} else if (history.length) {
+			onhidden = history.back.bind(history);
+			dismiss = m("button", {
+				className:      "btn btn-default",
+				"data-dismiss": "modal",
+			}, "戻る");
+		} else {
+			onhidden = () => m.route("");
+			dismiss = m("a", {
+				className: "btn btn-default",
+				href:      "#",
+			}, "トップページへ");
+		}
+
+		view.push(modal(controlState.modal.showing == "done", onhidden, {tabindex: "-1"}, [
+			m("div", {className: "modal-body"},
+				(controlState.modal.messages.success ? successView : errorView)(
+					controlState.modal.messages.done.body)
+			), m("div", {className: "modal-footer"}, dismiss),
+		]));
+	}
+
+	return view;
 }
 
 /**
@@ -1058,24 +1003,12 @@ export function buttonView(control) {
 	@property {?external:ES.Boolean} leaveOnInvalid - The boolean which
 	indicates whether it should leave the current page if the form
 	gets invalid. The default behavior is NOT to leave.
-	@property {?module:private/components/member/primitive~Onerror} onerror
-	- The function which gets called back when an error which should be
-	notified was occurred.
-	@property {?module:private/components/member/primitive~Onsuccess}
-	onsuccess - The function which gets called back when a successful
-	progress which should be notified was made.
 	@property {?module:private/components/member/primitive~Onloadstart}
 	onloadstart - The function which gets called back when a significant
 	and asynchronous loading started.
 	@property {?module:private/components/member/primitive~Onemptied}
-	onloadend - The function which gets
-	called back when a significant and asynchronous loading ended.
-	@property {?module:private/components/member/primitive~Onemptied}
 	onemptied - The function which gets called back when the content is
 	missing while it is expected to exist.
-	@property {?module:private/components/member/primitive~Onprogress}
-	onprogress - The function which gets called back when a significant and
-	asynchronous loading notified the progress.
 	@property {?module:private/components/member/primitive~Onmodalhide}
 	onmodalhide - The function which gets called back immediately before the
 	modal dialog starts being hidden.
@@ -1095,55 +1028,16 @@ export function buttonView(control) {
 */
 
 /**
-	An Oncriticalstart is a function which gets called back when a critical
-	session starts.
-	@callback module:private/components/member/primitive~Oncriticalstart
-*/
-
-/**
-	An Oncriticalend is a function which gets called back when a critical
-	session ends.
-	@callback module:private/components/member/primitive~Oncriticalend
-*/
-
-/**
-	An Onerror is a function which gets called back when an error which
-	should be notified was occurred.
-	@callback module:private/components/member/primitive~Onerror
-	@param {!external:ES.String} message - The message.
-*/
-
-/**
-	An Onsuccess is a function which gets called back when a successful
-	progress which should be notified was made.
-	@callback module:private/components/member/primitive~Onsuccess
-	@param {!external:ES.String} message - The message.
-*/
-
-/**
 	An Onloadstart is a function which gets called back when a significant
 	and asynchronous loading started.
 	@callback module:private/components/member/primitive~Onloadstart
-*/
-
-/**
-	An Onloadend is a function which gets called back when a significant and
-	asynchronous loading ended.
-	@callback module:private/components/member/primitive~Onloadend
-	@param {?external:ES.Boolean} submission - True if a submission made
-	in the loading.
+	@param {!external:jQuery.$.Deferred#promise} - TODO
 */
 
 /**
 	An Onemptied is a function which gets called back when the content is
 	missing while it is expected to exist.
 	@callback module:private/components/member/primitive~Onemptied
-*/
-
-/**
-	An Onprogress is a function which gets called back when a significant
-	and asynchronous loading notified the progress.
-	@callback module:private/components/member/primitive~Onprogress
 */
 
 /**

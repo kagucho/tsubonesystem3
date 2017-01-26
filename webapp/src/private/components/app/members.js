@@ -2,7 +2,7 @@
 	@file members.js implements the feature to show members.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/components/app/members */
@@ -17,26 +17,15 @@ import * as client from "../../client";
 import * as container from "../container";
 import * as modal from "../member/modal";
 import * as progress from "../progress";
+import ProgressSum from "../../../progress_sum";
 import large from "../../large";
 import {members} from "../table";
 
 export class controller {
 	constructor() {
 		this.param = m.route.param();
-
-		client.memberList().then(got => {
-			this.members = got;
-			m.redraw();
-		}, xhr => {
-			this.error = client.error(xhr) || "どうしようもないエラーが発生しました。";
-			this.endProgress();
-			m.redraw();
-		}, event => {
-			this.updateProgress(event);
-			m.redraw();
-		});
-
-		this.startProgress();
+		this.progress = new ProgressSum;
+		this.load();
 	}
 
 	addMember() {
@@ -49,6 +38,14 @@ export class controller {
 
 	endAddingMember() {
 		delete this.adding;
+	}
+
+	load() {
+		this.progress.add(client.memberList().then(got => {
+			this.members = got;
+		}, xhr => {
+			this.error = client.error(xhr) || "どうしようもないエラーが発生しました。";
+		}));
 	}
 
 	update(key, value) {
@@ -64,22 +61,6 @@ export class controller {
 		}
 
 		history.pushState(null, null, url);
-
-		m.redraw();
-	}
-
-	startProgress() {
-		this.progress = {value: 0};
-	}
-
-	updateProgress(event) {
-		this.progress = {max: event.total, value: event.loaded};
-	}
-
-	endProgress() {
-		if (this.progress.value != this.progress.max) {
-			delete this.progress;
-		}
 	}
 }
 
@@ -98,15 +79,14 @@ export function view(control) {
 				{
 					label: m("label", {
 						className: "control-label",
-						htmlFor:   "members-nickname",
+						htmlFor:   "component-app-members-nickname",
 					}, "ニックネーム"),
 					input: m("input", {
 						className: "form-control",
-						id:        "members-nickname",
+						id:        "component-app-members-nickname",
 						maxlength: "63",
-						oninput:   m.withAttr("value", function(value) {
-							this.update("nickname", value);
-						}.bind(control)),
+						oninput:   m.withAttr("value",
+							control.update.bind(control, "nickname")),
 						placeholder: "Nickname",
 						type:        "search",
 						value:       control.param.nickname || "",
@@ -114,15 +94,14 @@ export function view(control) {
 				}, {
 					label: m("label", {
 						className: "control-label",
-						htmlFor:   "members-realname",
+						htmlFor:   "component-app-members-realname",
 					}, "名前"),
 					input: m("input", {
 						className: "form-control",
-						id:        "members-realname",
+						id:        "component-app-members-realname",
 						maxlength: "63",
-						oninput:   m.withAttr("value", function(value) {
-							this.update("realname", value);
-						}.bind(control)),
+						oninput:   m.withAttr("value",
+							control.update.bind(control, "realname")),
 						placeholder: "Name",
 						type:        "search",
 						value:       control.param.realname || "",
@@ -130,16 +109,15 @@ export function view(control) {
 				}, {
 					label: m("label", {
 						className: "control-label",
-						htmlFor:   "members-entrance",
+						htmlFor:   "component-app-members-entrance",
 					}, "入学年度"),
 					input: m("input", {
 						className: "form-control",
-						id:        "members-entrance",
+						id:        "component-app-members-entrance",
 						max:       "2155",
 						min:       "1901",
-						oninput:   m.withAttr("value", function(value) {
-							this.update("entrance", value);
-						}.bind(control)),
+						oninput:   m.withAttr("value",
+							control.update.bind(control, "entrance")),
 						placeholder: "Entrance",
 						type:        "number",
 						value:       control.param.entrance,
@@ -152,14 +130,14 @@ export function view(control) {
 				},
 			},
 				m("div", {
-					className: "members-cell",
+					className: "component-app-members-cell",
 					style:     {
 						padding:       "1rem",
 						verticalAlign: "middle",
 					},
 				}, object.label),
 				m("div", {
-					className: "members-cell",
+					className: "component-app-members-cell",
 					style:     {
 						padding: "1rem",
 						width:   "100%",
@@ -204,6 +182,11 @@ export function view(control) {
 			)))
 		),
 	];
+
+	const onloadstart = (function(promise) {
+		this.progress.add(promise.done(
+			submission => submission && this.load()));
+	}).bind(control);
 
 	if (control.error) {
 		content.push(
@@ -257,27 +240,23 @@ export function view(control) {
 				style:     {margin: "1rem"},
 			},
 				 m(members, {
-					members:     showingMembers,
-					onloadstart: control.startProgress.bind(control),
-					onloadend:   control.endProgress.bind(control),
-					onprogress:  control.updateProgress.bind(control),
+					members: showingMembers,
+					onloadstart,
 				})
 			)
 		));
 	}
 
 	return [
-		control.progress && m(progress, control.progress),
+		m(progress, control.progress.html()),
 		m(container, m("div", {className: "container"},
 			m("h1", "Members"),
 			m("div", content)
 		)),
 		control.adding && m(modal, {
-			id:          null,
-			onhidden:    control.endAddingMember.bind(control),
-			onloadstart: control.startProgress.bind(control),
-			onloadend:   control.endProgress.bind(control),
-			onprogress:  control.updateProgress.bind(control),
+			id:       null,
+			onhidden: control.endAddingMember.bind(control),
+			onloadstart,
 		}),
 	];
 }

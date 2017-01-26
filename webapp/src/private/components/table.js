@@ -2,7 +2,7 @@
 	@file table.js implements tables.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
-	@license AGPL-3.0
+	@license AGPL-3.0+
 */
 
 /** @module private/components/table */
@@ -31,8 +31,6 @@ class Common {
 	controller() {
 		return {
 			showMember(id) {
-				const container = $("#container");
-
 				if (large()) {
 					this.rendering = id;
 
@@ -51,16 +49,12 @@ class Common {
 			m("table", {className: "table"},
 				this.table(attributes.members, member => m("a", {
 					href:    "#!member?id=" + member.id,
-					onclick: (function() {
-						return this.control.showMember(this.id);
-					}).bind({control, id: member.id}),
+					onclick: control.showMember.bind(control, member.id),
 				}, member.nickname))
 			), control.rendering && m(memberModal, {
 				id:          control.rendering,
 				onhidden:    control.hideMember.bind(control),
 				onloadstart: attributes.onloadstart,
-				onloadend:   attributes.onloadend,
-				onprogress:  attributes.onprogress,
 			}));
 	}
 }

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<!--
+	Copyright (C) 2017  Kagucho <kagucho.net@gmail.com>
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published
+	by the Free Software Foundation, either version 3 of the License, or (at
+	your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html>
+	<head>
+		<link crossorigin="anonymous"
+			href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"
+			integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+			rel="stylesheet">
+	</head>
+	<body>
+		<div class="container">
+			<h1>TsuboneSystem - メールアドレス変更手続き</h1>
+			<p>次のリンクを開いてメールアドレスの変更を続行してください。</p>
+			<p><a class="btn btn-default btn-primary" href="{{.Confirmation}}">登録手続きを続ける</a></p>
+			<h2>リンク先が無効のようだけど</h2>
+			<p>リンクは12時間後に無効になります。さっさと登録しましょう。</p>
+			<h2>何このメール、知らないんだけど</h2>
+			<p>お手数ですが、このメールに返信して下さい。お願いします。迷惑メールじゃないんで! (逆に怪しい)</p>
+			<h2>知らないうちに登録終わってたんだけど</h2>
+			<p>もしあなたがボケていない場合、メールが盗聴された可能性があります。返信して報告して下さい。</p>
+		</div>
+		<footer class="clearfix" style="background-image: url({{.Base}}${require("../../images/footer.png")}); background-position: right; background-repeat: no-repeat; background-size: contain; border-color: black; border-top-style: solid; border-width: .1rem; padding-top: 1rem;">
+			<p><a href="{{.Base}}/">Top</a></p>
+			<p>Copyright © 2016 神楽坂一丁目通信局. 詳細は<a href="{{.Base}}/license">こちら</a>をご覧ください。</p>
+		</footer>
+	</body>
+</html>
