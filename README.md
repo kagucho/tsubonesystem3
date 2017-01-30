@@ -39,6 +39,7 @@ export GOPATH=/somewhere/nice
 
 ```
 go get -d github.com/kagucho/tsubonesystem3
+cd $GOPATH/src/github.com/kagucho/tsubonesystem3
 ```
 
 3\. Create a configuration file as `configuration/configuration.go`.
@@ -61,27 +62,19 @@ $
 $ mysql < test.sql
 ```
 
-5\. Update dependencies.
+5\. Prepare.
 
 ```
-$ npm update --dev
+$ make prepare
 ```
 
-6\. Install!
+6\. Make!
 
 ```
-npm install
+make
 ```
 
-7\. Start!
-
-```
-npm start
-```
-
-Run command `npm stop` __in the same session__ to stop.
-
-npm provides other helpful scripts; see `package.json`.
+make provides other helpful targets; see `Makefile`.
 
 # License
 This software is licensed under AGPL-3.0. See `COPYING.TXT`.

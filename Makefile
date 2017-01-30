@@ -1,21 +1,17 @@
-.PHONY: all fmt gofmt goinstall goinstall-fcgi golint gotest	\
-	install install-fcgi lint test vnu webapp-eslint	\
-	webapp-eslint-fix webapp-jsdoc webapp-karma	\
-	webapp-webpack webapp-webpack-watch
+.PHONY: all fmt gofmt golint gotest install install-fcgi lint test	\
+	vnu webapp-lint webapp-fmt webapp-jsdoc webapp-karma	\
+	webapp-install webapp-webpack-watch
 
-all:
-	"$$GOPATH/bin/tsubonesystem3" & $(MAKE) -C webapp webpack-watch & wait
+all: $(GOPATH)/bin/tsubonesystem3
+	'$<' & $(MAKE) -C webapp webpack-watch & wait
 
-fmt: webapp-eslint-fix gofmt
+fmt: webapp-fmt gofmt
 
 gofmt:
 	gofmt -w .
 
-goinstall:
-	go install ./frontend/tsubonesystem3
-
-goinstall-fcgi:
-	go install ./frontend/tsubonesystem3_fcgi
+$(GOPATH)/bin/%: ./frontend/%
+	go install $<
 
 golint:
 	golint ./...
@@ -23,30 +19,31 @@ golint:
 gotest:
 	go test ./...
 
-install: webapp-webpack goinstall
+install: webapp-install $(GOPATH)/bin/tsubonesystem3
 
-install-fcgi: webapp-webpack goinstall-fcgi
+install-fcgi: webapp-install $(GOPATH)/bin/tsubonesystem3_fcgi
 
-lint: webapp-eslint vnu golint
+lint: webapp-lint golint
+
+prepare:
+	$(MAKE) -C webapp prepare
 
 test: webapp-karma gotest
 
-vnu:
-	$(MAKE) start
-	TSUBONESYSTEM_URL=`go run ./frontend/tsubonesystem3_resolve` java -jar node_modules/vnu-jar/build/dist/vnu.jar "$$TSUBONESYSTEM_URL" "$$TSUBONESYSTEM_URL/license" "$$TSUBONESYSTEM_URL/private" "$$TSUBONESYSTEM_URL/private?_escaped_fragment_="
-	$(MAKE) stop
+webapp-vnu: $(GOPATH)/bin/tsubonesystem3 webapp-install
+	'$<' & TSUBONESYSTEM_URL=`go run ./frontend/tsubonesystem3_resolve` $(MAKE) -C webapp vnu; kill $$!
 
-webapp-eslint:
-	$(MAKE) -C webapp eslint
+webapp-lint: webapp
+	$(MAKE) -C $< lint
 
-webapp-eslint-fix:
-	$(MAKE) -C webapp eslint-fix
+webapp-fmt: webapp
+	$(MAKE) -C $< fmt
 
 webapp-karma:
 	TSUBONESYSTEM_URL=`go run ./frontend/tsubonesystem3_resolve` $(MAKE) -C webapp karma
 
-webapp-webpack:
-	$(MAKE) -C webapp webpack
+webapp-install: webapp
+	$(MAKE) -C $< install
 
-webapp-webpack-watch:
-	$(MAKE) -C webapp webpack-watch
+webapp-webpack-watch: webapp
+	$(MAKE) -C $< webpack-watch

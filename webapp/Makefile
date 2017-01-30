@@ -1,6 +1,6 @@
 .PHONY: all eslint eslint-build eslint-fix eslint-fix-build	\
-	eslint-fix-src eslint-fix-test eslint-src eslint-test	\
-	jsdoc karma webpack webpack-watch
+	eslint-fix-src eslint-fix-test eslint-src eslint-test fmt	\
+	install jsdoc karma lint prepare webpack webpack-watch
 
 all: eslint-test
 
@@ -26,11 +26,23 @@ eslint-src:
 eslint-test:
 	npm run eslint-test
 
+fmt: eslint-fix
+
+install: webpack
+
 jsdoc:
 	npm run jsdoc
 
 karma:
 	npm run karma -- start --browsers PhantomJS --single-run
+
+lint: eslint vnu
+
+prepare:
+	npm update --dev
+
+vnu:
+	npm run vnu "$$TSUBONESYSTEM_URL" "$$TSUBONESYSTEM_URL/license" "$$TSUBONESYSTEM_URL/private" "$$TSUBONESYSTEM_URL/private?_escaped_fragment_="
 
 webpack:
 	npm run webpack -- --output-path "$$GOPATH/share/tsubonesystem3/public"
