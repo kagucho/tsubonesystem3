@@ -7,6 +7,7 @@ computer?
 All of the following softwares:
 
 * [GNU Bash](https://www.gnu.org/software/bash/)
+* [GNU Make](https://www.gnu.org/software/make/)
 * [Go 1.7](https://golang.org/)
 * [OpenJDK 8](http://openjdk.java.net/)
 * [MariaDB 10.1](https://mariadb.org/)

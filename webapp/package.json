@@ -1,0 +1,62 @@
+{
+  "name": "tsubonesystem3",
+  "version": "0.0.0",
+  "description": "A Web service used in Kagucho, a club in Tokyo University of Science",
+  "main": "see_readme.js",
+  "scripts": {
+    "vnu": "java -jar node_modules/vnu-jar/build/dist/vnu.jar",
+    "eslint-build": "eslint --env node --ignore-pattern src .",
+    "eslint-src": "eslint --env browser,es6,jquery --ignore-pattern 'src/**/*_test.js' src",
+    "eslint-test": "eslint --env browser,es6,jquery,mocha 'src/**/*_test.js'",
+    "jsdoc": "jsdoc -r -R ../README.md src",
+    "karma": "karma",
+    "webpack": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kagucho/tsubonesystem3.git"
+  },
+  "author": "Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>",
+  "license": "AGPL-3.0+",
+  "bugs": {
+    "url": "https://github.com/kagucho/tsubonesystem3/issues"
+  },
+  "homepage": "https://github.com/kagucho/tsubonesystem3#readme",
+  "dependencies": {
+    "babel-core": "^6.17.0",
+    "babel-loader": "^6.2.5",
+    "babel-polyfill": "^6.16.0",
+    "babel-preset-es2015": "^6.18.0",
+    "babel-preset-es2016": "^6.16.0",
+    "css-loader": "^0.26.1",
+    "file-loader": "^0.9.0",
+    "html-loader": "^0.4.4",
+    "postcss-cssnext": "^2.9.0",
+    "postcss-loader": "^1.2.0",
+    "style-loader": "^0.13.1",
+    "stylelint": "^7.6.0",
+    "stylelint-config-standard": "^15.0.0",
+    "url-loader": "^0.5.7",
+    "webpack": "^2.2.0"
+  },
+  "devDependencies": {
+    "babel-polyfill": "^6.22.0",
+    "eslint": "^3.10.2",
+    "eslint-plugin-nodeca": "^1.0.3",
+    "jquery": "^3.1.1",
+    "jsdoc": "^3.4.3",
+    "karma": "^1.3.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-coverage": "^1.1.1",
+    "karma-edge-launcher": "^0.2.0",
+    "karma-firefox-launcher": "^1.0.0",
+    "karma-ie-launcher": "^1.0.0",
+    "karma-mocha": "^1.3.0",
+    "karma-phantomjs-launcher": "^1.0.2",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-webpack": "^2.0.1",
+    "mithril": "^0.2.5",
+    "mocha": "^3.1.2",
+    "vnu-jar": "^17.1.0"
+  }
+}

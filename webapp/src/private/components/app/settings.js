@@ -124,7 +124,7 @@ export function view(control) {
 		}),
 		control.confirmation && [
 			{
-				state: "done",
+				state:   "done",
 				content: m("div", {className: "modal-content"},
 					m("div", {className: "modal-body"},
 						m("span", {ariaHidden: "true"},
@@ -136,8 +136,8 @@ export function view(control) {
 						), control.confirmation.message
 					), m("div", {className: "modal-footer"},
 						m("button", {
-							className:      "btn btn-default",
-							config:         control.confirmation.state == "done" &&
+							className: "btn btn-default",
+							config:    control.confirmation.state == "done" &&
 									control.confirmation.shown &&
 									(element => element.focus()),
 							type:           "button",
@@ -163,13 +163,13 @@ export function view(control) {
 								control.confirmation.shown &&
 								(element => element.focus()),
 
-							type:      "button",
-							onclick:   control.confirm.bind(control),
+							type:    "button",
+							onclick: control.confirm.bind(control),
 						}, "再送信する")
 					)
 				),
 			}, {
-				state: "sending",
+				state:   "sending",
 				content: m("div", {className: "modal-content"},
 					m("div", {className: "modal-body"},
 						"送信しています…"
@@ -179,7 +179,7 @@ export function view(control) {
 		].map(object => m("div", {
 			ariaHidden: (control.confirmation.state != object.state).toString(),
 			className:  "modal fade",
-			config: (function(state, element, initialized, context) {
+			config:     (function(state, element, initialized, context) {
 				const jquery = $(element);
 
 				if (!initialized) {
