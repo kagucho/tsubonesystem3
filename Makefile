@@ -1,17 +1,20 @@
-.PHONY: all fmt gofmt golint gotest install install-fcgi lint test	\
-	vnu webapp-lint webapp-fmt webapp-jsdoc webapp-karma	\
-	webapp-install webapp-webpack-watch
+.PHONY: all fmt gofmt goinstall goinstall-fcgi golint gotest	\
+	install install-fcgi lint test vnu webapp-lint webapp-fmt	\
+	webapp-jsdoc webapp-karma webapp-install webapp-webpack-watch
 
-all: $(GOPATH)/bin/tsubonesystem3
-	'$<' & $(MAKE) -C webapp webpack-watch & wait
+all:
+	"$$GOPATH/bin/tsubonesystem3" & $(MAKE) -C webapp webpack-watch & wait
 
 fmt: webapp-fmt gofmt
 
 gofmt:
 	gofmt -w .
 
-$(GOPATH)/bin/%: ./frontend/%
-	go install $<
+goinstall: frontend/tsubonesystem3
+	go install ./$<
+
+goinstall-fcgi: frontend/tsubonesystem3_fcgi
+	go install ./$<
 
 golint:
 	golint ./...
@@ -19,19 +22,19 @@ golint:
 gotest:
 	go test ./...
 
-install: webapp-install $(GOPATH)/bin/tsubonesystem3
+install: webapp-install goinstall
 
-install-fcgi: webapp-install $(GOPATH)/bin/tsubonesystem3_fcgi
+install-fcgi: webapp-install goinstall-fcgi
 
 lint: webapp-lint golint
 
-prepare:
-	$(MAKE) -C webapp prepare
+prepare: webapp
+	$(MAKE) -C $< prepare
 
 test: webapp-karma gotest
 
-webapp-vnu: $(GOPATH)/bin/tsubonesystem3 webapp-install
-	'$<' & TSUBONESYSTEM_URL=`go run ./frontend/tsubonesystem3_resolve` $(MAKE) -C webapp vnu; kill $$!
+webapp-vnu: goinstall webapp-install
+	"$$GOPATH/bin/tsubonesystem3" & TSUBONESYSTEM_URL=`go run ./frontend/tsubonesystem3_resolve` $(MAKE) -C webapp vnu; kill $$!
 
 webapp-lint: webapp
 	$(MAKE) -C $< lint
