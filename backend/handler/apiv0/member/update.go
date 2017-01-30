@@ -103,6 +103,30 @@ func validateTel(tel string) bool {
 	return true
 }
 
+func ConfirmServeHTTP(writer http.ResponseWriter, request *http.Request, context context.Context, claim authorizer.Claim) {
+	tokenClaim, tokenError := context.Token.AuthenticateMail(request.FormValue(`token`))
+	if tokenError.IsError() {
+		common.ServeErrorDefault(writer, http.StatusBadRequest)
+
+		return
+	}
+
+	if claim.Sub != tokenClaim.Sub {
+		common.ServeErrorDefault(writer, http.StatusBadRequest)
+
+		return
+	}
+
+	confirmError := context.DB.ConfirmMember(claim.Sub)
+	if confirmError != nil {
+		common.ServeErrorDefault(writer, http.StatusBadRequest)
+
+		return
+	}
+
+	common.ServeJSON(writer, struct{}{}, http.StatusOK)
+}
+
 func CreateServeHTTP(writer http.ResponseWriter, request *http.Request, context context.Context, claim authorizer.Claim) {
 	id := request.FormValue(`id`)
 	if !validateID(id) {
@@ -168,7 +192,7 @@ func ManageMailServeHTTP(writer http.ResponseWriter, request *http.Request, cont
 */
 
 func DeclareOBServeHTTP(writer http.ResponseWriter, request *http.Request, context context.Context, claim authorizer.Claim) {
-	if declareError := context.DB.DeclareOB(claim.Sub); declareError == nil {
+	if declareError := context.DB.DeclareMemberOB(claim.Sub); declareError == nil {
 		common.ServeJSON(writer, struct{}{}, http.StatusOK)
 	} else {
 		common.ServeErrorDefault(writer, http.StatusBadRequest)
@@ -213,7 +237,7 @@ func UpdateServeHTTP(writer http.ResponseWriter, request *http.Request, context 
 	}
 
 	password := request.PostFormValue(`password`)
-	if db.ValidatePassword(password) {
+	if !db.ValidatePassword(password) {
 		common.ServeError(writer,
 			common.Error{Description: `invalid password`},
 			http.StatusBadRequest)
@@ -246,7 +270,7 @@ func UpdateServeHTTP(writer http.ResponseWriter, request *http.Request, context 
 	}
 
 	if address != `` {
-		token, tokenError := context.Token.IssueAccessMail(claim.Sub)
+		token, tokenError := context.Token.IssueMail(claim.Sub)
 		if tokenError != nil {
 			common.ServeErrorDefault(writer, http.StatusInternalServerError)
 

@@ -19,6 +19,6 @@ const container = document.getElementById("container");
 
 m.mount(container, recover).catch(
 	m.mount.bind(m, container, signin)).done(
-		m.route.bind(m, container, "", app));
+		() => m.route(container, "", app));
 
 m.route.mode = "hash";

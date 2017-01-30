@@ -32,7 +32,7 @@ func (context Mail) SendConfirmation(host string, address mail.Address, token st
 	data.Base = constructing.String()
 
 	constructing.Path = `/private`
-	constructing.Fragment = `!confirm?token=` + token
+	constructing.Fragment = `!settings?confirm=` + token
 	data.Confirmation = constructing.String()
 
 	return context.send(host, address, `confirmation`, data)

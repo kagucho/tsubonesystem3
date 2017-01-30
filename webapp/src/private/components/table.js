@@ -85,7 +85,7 @@ export const members = new Common((entries, nicknameView) => [
 		m("th", "ニックネーム"),
 		m("th", "名前"),
 		m("th", "入学年度")
-	)), m("tbody", entries.map(entry => m("tr",
+	)), m("tbody", entries.map(entry => m("tr", {key: entry.id},
 		m("td", nicknameView(entry)),
 		m("td", entry.realname),
 		m("td", entry.entrance)
@@ -102,7 +102,7 @@ export const officers = new Common((entries, nicknameView) => [
 		m("th", "名前"),
 		m("th", "メールアドレス"),
 		m("th", "電話番号")
-	)), m("tbody", entries.map(entry => m("tr",
+	)), m("tbody", entries.map(entry => m("tr", {key: entry.id},
 		m("td", nicknameView(entry)),
 		m("td", entry.realname),
 		m("td", m("a", {href: url.mailto(entry.mail)}, entry.mail)),

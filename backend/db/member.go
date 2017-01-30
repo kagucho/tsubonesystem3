@@ -79,6 +79,7 @@ const (
 type Member struct {
 	Affiliation string
 	Clubs       <-chan MemberClubResult
+	Confirmed   bool
 	Entrance    uint16
 	Gender      string
 	Mail        string
@@ -101,6 +102,16 @@ type member struct {
 type memberResult struct {
 	Error error
 	Value member
+}
+
+func flagsHasOB(flags string) bool {
+	for _, flag := range strings.Split(flags, `,`) {
+		if flag == `ob` {
+			return true
+		}
+	}
+
+	return false
 }
 
 func hashPassword(password string) ([]byte, error) {
@@ -176,8 +187,13 @@ func (db DB) InsertMember(id, mail, nickname string) error {
 	return execError
 }
 
-func (db DB) DeclareOB(id string) error {
-	_, execError := db.stmts[stmtDeclareOB].Exec(id)
+func (db DB) DeclareMemberOB(id string) error {
+	_, execError := db.stmts[stmtDeclareMemberOB].Exec(id)
+	return execError
+}
+
+func (db DB) ConfirmMember(id string) error {
+	_, execError := db.stmts[stmtConfirmMember].Exec(id)
 	return execError
 }
 
@@ -189,14 +205,28 @@ func (db DB) DeleteMember(id string) error {
 // QueryMember returns db.MemberDetail of the member identified with the given
 // ID.
 func (db DB) QueryMember(id string) (Member, error) {
+	var dbFlags string
 	var dbMember uint16
 	var output Member
+
 	if scanError := db.stmts[stmtSelectMember].QueryRow(id).Scan(
-		&dbMember, &output.Affiliation, &output.Entrance,
-		&output.Gender, &output.Mail, &output.Nickname, &output.OB,
-		&output.Realname, &output.Tel); scanError != nil {
+		&dbMember, &output.Affiliation, &output.Entrance, &dbFlags,
+		&output.Gender, &output.Mail, &output.Nickname, &output.Realname,
+		&output.Tel); scanError != nil {
 		return Member{}, scanError
 	}
+
+	for _, flag := range strings.Split(dbFlags, `,`) {
+		switch flag {
+		case `confirmed`:
+			output.Confirmed = true
+
+		case `ob`:
+			output.OB = true
+		}
+	}
+
+	output.OB = flagsHasOB(dbFlags)
 
 	clubs := make(chan MemberClubResult)
 	output.Clubs = clubs
@@ -291,19 +321,23 @@ func (db DB) QueryMembers() chanjson.ChanJSON {
 		defer rows.Close()
 
 		for rows.Next() {
+			var flags string
 			var result memberResult
 
 			result.Error = rows.Scan(
 				&result.Value.Affiliation,
-				&result.Value.Entrance,
 				&result.Value.ID,
+				&result.Value.Entrance,
+				&flags,
 				&result.Value.Nickname,
-				&result.Value.OB,
 				&result.Value.Realname)
 
-			resultChan <- result
+			if result.Error == nil {
+				result.Value.OB = flagsHasOB(flags)
+				resultChan <- result
+			} else {
+				resultChan <- result
 
-			if result.Error != nil {
 				return
 			}
 		}
@@ -395,7 +429,7 @@ func (db DB) UpdateMember(id, password, affiliation string, clubs []string, entr
 	}
 
 	if mail != `` {
-		expressions = append(expressions, `mail=?`)
+		expressions = append(expressions, `flags=EXPORT_SET(flags, '', 'confirmed'), mail=?`)
 		arguments = append(arguments, mail)
 	}
 

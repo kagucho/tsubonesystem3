@@ -15,6 +15,7 @@ import * as officer from "./officer";
 import * as officers from "./officers";
 import * as password from "./password";
 import * as root from "./root";
+import * as settings from "./settings";
 
 /**
 	module:private/components/app is the route of the application.
@@ -25,5 +26,5 @@ export default Object.freeze({
 	"!club":     club, "!clubs":    clubs,
 	"!member":   member, "!members":  members,
 	"!officer":  officer, "!officers": officers,
-	"!password": password,
+	"!password": password, "!settings": settings,
 });

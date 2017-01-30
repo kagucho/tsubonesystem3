@@ -30,6 +30,7 @@ var routes = map[string]authorizer.Route{
 	`/club/detail`:           {club.DetailServeHTTP, scope.Basic},
 	`/club/list`:             {club.ListServeHTTP, scope.Basic},
 	`/club/listname`:         {club.ListNameServeHTTP, scope.Basic},
+	`/member/confirm`:        {member.ConfirmServeHTTP, scope.Basic},
 	`/member/create`:         {member.CreateServeHTTP, scope.Basic},
 	`/member/declareob`:      {member.DeclareOBServeHTTP, scope.Basic},
 	`/member/delete`:         {member.DeleteServeHTTP, scope.Management},

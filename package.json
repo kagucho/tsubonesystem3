@@ -19,7 +19,7 @@
     "pretest": "npm restart",
     "restart": "npm stop && npm start",
     "start": "npm run tsubonesystem3 & npm run webapp-webpack-watch &",
-    "stop": "for PID in `ps -o pid,cmd | grep -e \"webpack --output-path $GOPATH/share/tsubonesystem3/public --watch\\$\" -e \"^[[:digit:]]* $GOPATH/bin/tsubonesystem3\\$\" | cut -d' ' -f1`; do kill $PID; done",
+    "stop": "ps -o pid,cmd | grep -e \"webpack --output-path $GOPATH/share/tsubonesystem3/public --watch\\$\" -e \"^\\s*[[:digit:]]* $GOPATH/bin/tsubonesystem3\\$\" | while read -r PID _; do kill $PID; done",
     "test": "TSUBONESYSTEM_URL=`go run ./frontend/tsubonesystem3_resolve` npm run webapp-karma-auto & npm run gotest; wait",
     "tsubonesystem3": "\"$GOPATH/bin/tsubonesystem3\"",
     "vnu": "java -jar node_modules/vnu-jar/build/dist/vnu.jar \"$TSUBONESYSTEM_URL\" \"$TSUBONESYSTEM_URL/license\" \"$TSUBONESYSTEM_URL/private\" \"$TSUBONESYSTEM_URL/private?_escaped_fragment_=\"",

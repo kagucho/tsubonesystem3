@@ -18,16 +18,17 @@
 package mail
 
 import (
-	"bytes"
+	"errors"
+	"fmt"
 	htmlTemplate "html/template"
+	"log"
 	"mime"
 	"mime/multipart"
 	"mime/quotedprintable"
 	"net/mail"
-	"net/smtp"
 	"net/textproto"
+	"os/exec"
 	"path"
-	"strings"
 	textTemplate "text/template"
 	"time"
 )
@@ -88,65 +89,96 @@ func New(share string) (Mail, error) {
 	return mail, parseError
 }
 
-func (context Mail) send(host string, to mail.Address, template string, data interface{}) error {
-	from := mail.Address{`TsuboneSystem`, `noreply-kagucho@` + host}
-
-	var buffer bytes.Buffer
-
-	buffer.WriteString("Date: ")
-	buffer.WriteString(time.Now().Format(time.RFC1123))
-
-	buffer.WriteString("\r\nFrom: ")
-	buffer.WriteString(from.String())
-
-	buffer.WriteString("\r\nTo: ")
-	buffer.WriteString(to.String())
-
-	buffer.WriteString("\r\nSubject: ")
-	buffer.WriteString(mime.QEncoding.Encode(`UTF-8`, `TsuboneSystem 登録手続き`))
-
+func (context Mail) send(host string, to mail.Address, template string, data interface{}) (returning error) {
 	const boundary = `Copyright(C)2017Kagucho.LicensedUnderAGPL-3.0.`
 
-	buffer.WriteString("\r\n" +
-		contentType + ": multipart/alternative; boundary=" + boundary + "\r\n" +
-		"\r\n")
+	cmd := exec.Command("sendmail", "-t")
 
-	multipartWriter := multipart.NewWriter(&buffer)
-	multipartWriter.SetBoundary(boundary)
+	pipe, pipeError := cmd.StdinPipe()
+	if pipeError != nil {
+		return pipeError
+	}
+
+	startError := cmd.Start()
+	if startError != nil {
+		return startError
+	}
+
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			if killError := cmd.Process.Kill(); killError != nil {
+				log.Print(killError)
+			}
+
+			if waitError := cmd.Wait(); waitError != nil {
+				log.Print(waitError)
+			}
+
+			if recoveredError, ok := recovered.(error); ok {
+				returning = recoveredError
+			} else {
+				returning = errors.New(fmt.Sprint(recovered))
+			}
+		}
+	}()
+
+	for _, data := range [...]string{
+		"Date: ", time.Now().Format(time.RFC1123),
+		"\r\nFrom: ", (&mail.Address{`TsuboneSystem`, `noreply-kagucho@` + host}).String(),
+		"\r\nTo: ", to.String(),
+		"\r\nSubject: ", mime.QEncoding.Encode(`UTF-8`, `TsuboneSystem 登録手続き`),
+		"\r\n" + contentType + ": multipart/alternative; boundary=" + boundary +
+		"\r\nMIME-Version: 1.0" +
+		"\r\n" +
+		"\r\n",
+	} {
+		if _, writeError := pipe.Write([]byte(data)); writeError != nil {
+			panic(writeError)
+		}
+	}
+
+	multipartWriter := multipart.NewWriter(pipe)
+
+	boundaryError := multipartWriter.SetBoundary(boundary)
+	if boundaryError != nil {
+		panic(boundaryError)
+	}
 
 	textPart, textPartError := multipartWriter.CreatePart(textMIME)
 	if textPartError != nil {
-		return textPartError
+		panic(textPartError)
 	}
 
 	textEncoding := quotedprintable.NewWriter(textPart)
 	textExecuteError := context.text.ExecuteTemplate(textEncoding, template, data)
-	textEncoding.Close()
+
+	if closeError := textEncoding.Close(); closeError != nil {
+		panic(closeError)
+	}
 
 	if textExecuteError != nil {
-		return textExecuteError
+		panic(textExecuteError)
 	}
 
 	htmlPart, htmlPartError := multipartWriter.CreatePart(htmlMIME)
 	if htmlPartError != nil {
-		return htmlPartError
+		panic(htmlPartError)
 	}
 
 	htmlEncoding := quotedprintable.NewWriter(htmlPart)
 	htmlExecuteError := context.html.ExecuteTemplate(htmlEncoding, template, data)
-	htmlEncoding.Close()
 
-	if htmlExecuteError != nil {
-		return htmlExecuteError
+	if closeError := htmlEncoding.Close(); closeError != nil {
+		panic(closeError)
 	}
 
-	/*
-		return smtp.SendMail(`smtp.gmail.com:587`,
-			smtp.PlainAuth(``, `root.3.173210@gmail.com`, `hlckqmfstwpjqfck`, `smtp.gmail.com`),
-			`noreply-tsubonesystem@`+host, []string{address},
-			buffer.Bytes())
-	*/
-	return smtp.SendMail(to.Address[strings.IndexByte(to.Address, '@')+1:]+":25", nil,
-		from.Address, []string{to.Address},
-		buffer.Bytes())
+	if htmlExecuteError != nil {
+		panic(htmlExecuteError)
+	}
+
+	if closeError := pipe.Close(); closeError != nil {
+		panic(closeError)
+	}
+
+	return cmd.Wait()
 }

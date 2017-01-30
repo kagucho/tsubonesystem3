@@ -32,20 +32,21 @@ import (
 type jsonMessage []byte
 
 type publicDetail struct {
-	Affiliation string      `json:"affiliation,omitempty"`
+	Affiliation string      `json:"affiliation",omitempty`
 	Clubs       jsonMessage `json:"clubs"`
-	Entrance    uint16      `json:"entrance,omitempty"`
-	Gender      string      `json:"gender,omitempty"`
+	Entrance    uint16      `json:"entrance",omitempty`
+	Gender      string      `json:"gender",omitempty`
 	Mail        string      `json:"mail"`
 	Nickname    string      `json:"nickname"`
 	OB          bool        `json:"ob"`
 	Positions   jsonMessage `json:"positions"`
-	Realname    string      `json:"realname,omitempty"`
+	Realname    string      `json:"realname",omitempty`
 }
 
 type privateDetail struct {
 	publicDetail
-	Tel string `json:"tel,omitempty"`
+	Confirmed bool `json:"confirmed",omitempty`
+	Tel string `json:"tel",omitempty`
 }
 
 func (message jsonMessage) MarshalJSON() ([]byte, error) {
@@ -158,7 +159,7 @@ func DetailServeHTTP(writer http.ResponseWriter, request *http.Request,
 
 			var unmarshalled interface{}
 			if inPosition || claim.Sub == id || claim.Scope.IsSet(scope.Privacy) {
-				unmarshalled = privateDetail{public, member.Tel}
+				unmarshalled = privateDetail{public, member.Confirmed, member.Tel}
 			} else {
 				unmarshalled = public
 			}

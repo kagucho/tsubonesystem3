@@ -7,6 +7,8 @@
 
 /** @module private/mithril */
 
+let ensuring;
+
 /**
 	ensureRedraw ensures Mithril redraws.
 	@param {!external:ES.Function|external:jQuery.$.Deferred#promise}
@@ -19,37 +21,55 @@
 */
 export function ensureRedraw(object) {
 	if ($.isFunction(object)) {
+		if (ensuring) {
+			object();
+
+			return;
+		}
+
 		const {redraw} = m;
 
-		m.redraw = force => {
-			if (force) {
-				if (redraw.strategy() != "none") {
+		try {
+			ensuring = true;
+
+			m.redraw = force => {
+				if (redraw.strategy() == "none") {
+					redraw.strategy("diff");
+				} else if (force) {
 					m.redraw = redraw;
 					m.redraw(force);
 				}
+			};
+
+			m.redraw.strategy = redraw.strategy;
+
+			object();
+		} finally {
+			ensuring = false;
+
+			if (m.redraw != redraw) {
+				m.redraw = redraw;
+				m.redraw();
 			}
-		};
-
-		m.redraw.strategy = redraw.strategy;
-
-		object();
-
-		if (m.redraw != redraw) {
-			m.redraw = redraw;
-			m.redraw();
 		}
 	} else {
 		const wrapped = Object.create(object);
 
 		for (const key of ["always", "catch", "done", "progress", "then"]) {
 			wrapped[key] = (function(...callbacks) {
-				return ensureRedraw(this(...(function *() {
-					for (const callback of callbacks) {
+				return ensureRedraw(this(...(function *(boundCallbacks) {
+					for (const callback of boundCallbacks) {
 						yield (function() {
-							ensureRedraw(() => this(...arguments));
+							let result;
+
+							ensureRedraw(() => {
+								result = this(...arguments);
+							});
+
+							return result;
 						}).bind(callback);
 					}
-				}())));
+				}(callbacks))));
 			}).bind(object[key].bind(object));
 		}
 

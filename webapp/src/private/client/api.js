@@ -164,6 +164,13 @@ export function clubListName(token) {
 /**
 	TODO
 */
+export function memberConfirm(token, mailToken) {
+	return ajax("/api/v0/member/confirm", "POST", token, {token: mailToken});
+}
+
+/**
+	TODO
+*/
 export function memberCreate(token, properties) {
 	return ajax("/api/v0/member/create", "POST", token, properties);
 }

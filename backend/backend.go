@@ -74,7 +74,7 @@ func New() (Backend, error) {
 	private, privateError := private.New(share, db, fileError)
 	if privateError != nil {
 		if closeError := db.Close(); closeError != nil {
-			log.Println(closeError)
+			log.Print(closeError)
 		}
 
 		return Backend{}, privateError

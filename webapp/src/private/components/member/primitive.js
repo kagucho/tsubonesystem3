@@ -38,8 +38,8 @@ const modal = (show, onhidden, options, content) => m("div", $.extend({
 				ensureRedraw.bind(undefined, this.onhidden));
 		}
 
-		jquery.modal(this.show ? "show" : "hide");
-	}).bind({onhidden, show}),
+		jquery.modal(this.action);
+	}).bind({onhidden, action: show ? "show" : "hide"}),
 	role:     "dialog",
 	tabindex: "-1",
 }, options),
@@ -172,7 +172,7 @@ class State {
 			this.modal.show("done", message);
 
 			return message.success;
-		}, xhr => this.state.modal.show("done", {body: xhrError(xhr)}))));
+		}, xhr => this.modal.show("done", {body: xhrError(xhr)}))));
 	}
 
 	/**
@@ -439,7 +439,7 @@ function controlSubmit(event) {
 	}
 
 	state.get(this).submit(promise => (this.critical = promise.always(() => {
-		delete this.critical;
+		this.critical = false;
 	})));
 }
 
@@ -543,7 +543,7 @@ export function bodyView(control) {
 					id:        "component-member-id",
 					maxlength: "63",
 					onchange:  controlState.updateID.bind(controlState),
-					oninvalid: controlState.updateValidity(controlState, "id"),
+					oninvalid: controlState.updateValidity.bind(controlState, "id"),
 
 					/*
 						URL Standard
@@ -632,6 +632,11 @@ export function bodyView(control) {
 			},
 			mail,
 			{
+				// TODO: allow to resend confirming mail if necessary.
+				th: m("div", headerAttributes, "メール確認"),
+				td: controlState.member.updated.confirmation == null ?
+					"?" : (controlState.member.updated.confirmation ? "確認済み" : "未確認"),
+			}, {
 				th: m("label", $.extend({
 					className: "control-label",
 					htmlFor:   "component-member-tel",
@@ -695,7 +700,7 @@ export function bodyView(control) {
 					list:      affiliation.id,
 					maxlength: "63",
 					onchange:  controlState.update.bind(controlState, "affiliation"),
-					oninvalid: controlState.updateValidity(controlState, "affiliation"),
+					oninvalid: controlState.updateValidity.bind(controlState, "affiliation"),
 					required:  true,
 					style:     {display: "inline"},
 					value:     controlState.member.updated.affiliation,
@@ -755,6 +760,10 @@ export function bodyView(control) {
 				td: controlState.member.updated.mail == null ? "?" :
 					m("a", {href: url.mailto(controlState.member.updated.mail)},
 						controlState.member.updated.mail),
+			}, {
+				th: m("div", headerAttributes, "メール確認"),
+				td: controlState.member.updated.confirmation == null ?
+					"?" : (controlState.member.updated.confirmation ? "確認済み" : "未確認"),
 			}, {
 				th: m("div", headerAttributes, "電話番号"),
 				td: controlState.member.updated.tel == null ? "?" :

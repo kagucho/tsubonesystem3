@@ -30,6 +30,7 @@ import (
 // Backend is a structure to hold the context of the token backend.
 type Backend struct {
 	access  jwt.JWT
+	mail    jwt.JWT
 	refresh jwt.JWT
 }
 
@@ -45,16 +46,25 @@ func New() (Backend, error) {
 		return Backend{}, accessError
 	}
 
+	mail, mailError := provider.New()
+	if mailError != nil {
+		return Backend{}, mailError
+	}
+
 	refresh, refreshError := provider.New()
 	if refreshError != nil {
 		return Backend{}, refreshError
 	}
 
-	return Backend{access, refresh}, nil
+	return Backend{access, mail, refresh}, nil
 }
 
 func (backend Backend) Authenticate(token string) (jwt.Claim, jwt.Error) {
 	return backend.access.Authenticate(token)
+}
+
+func (backend Backend) AuthenticateMail(token string) (jwt.Claim, jwt.Error) {
+	return backend.mail.Authenticate(token)
 }
 
 func (backend Backend) AuthenticateRefresh(token string) (jwt.Claim, jwt.Error) {
@@ -65,8 +75,8 @@ func RefreshRequiresRenew(claim jwt.Claim) bool {
 	return claim.Duration < refreshDuration
 }
 
-func (backend Backend) IssueAccessMail(sub string) (string, error) {
-	return backend.access.Issue(sub, `mail`, temporaryDuration, true)
+func (backend Backend) IssueMail(sub string) (string, error) {
+	return backend.mail.Issue(sub, ``, temporaryDuration, false)
 }
 
 func (backend Backend) IssueTemporaryAccessUpdater(sub string) (string, error) {

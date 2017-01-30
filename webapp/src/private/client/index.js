@@ -66,6 +66,13 @@ export const getScope = session.getScope.bind(session);
 /**
 	TODO
 */
+export function memberConfirm(mailToken) {
+	return session.applyToken(token => api.memberConfirm(token, mailToken));
+}
+
+/**
+	TODO
+*/
 export function memberCreate(properties) {
 	return session.applyToken(token => api.memberCreate(token, properties));
 }
