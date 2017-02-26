@@ -1,8 +1,10 @@
-.PHONY: all eslint eslint-build eslint-fix eslint-fix-build	\
+.PHONY: all doc eslint eslint-build eslint-fix eslint-fix-build	\
 	eslint-fix-src eslint-fix-test eslint-src eslint-test fmt	\
 	install jsdoc karma lint prepare webpack webpack-watch
 
 all: eslint-test
+
+doc: jsdoc
 
 eslint: eslint-build eslint-src eslint-test
 
@@ -41,11 +43,13 @@ lint: eslint vnu
 prepare:
 	npm update --dev
 
+test: karma
+
 vnu:
 	npm run vnu "$$TSUBONESYSTEM_URL" "$$TSUBONESYSTEM_URL/license" "$$TSUBONESYSTEM_URL/private" "$$TSUBONESYSTEM_URL/private?_escaped_fragment_="
 
 webpack:
-	npm run webpack -- --output-path "$$GOPATH/share/tsubonesystem3/public"
+	npm run webpack -- --output-path "$$GOPATH/share/tsubonesystem3/public" $(WEBPACKFLAGS)
 
 webpack-watch:
-	npm run webpack -- --output-path "$$GOPATH/share/tsubonesystem3/public" --watch
+	npm run webpack -- --output-path "$$GOPATH/share/tsubonesystem3/public" --watch $(WEBPACKFLAGS)

@@ -31,20 +31,33 @@
 		<meta property="og:url" content="https://kagucho.net/license">
 		<meta property="og:description" content="Webコンテンツの利用許諾です。">
 		<meta property="og:locale" content="ja_JP">
+		<script crossorigin="anonymous" defer
+			integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7"
+			src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js">
+		</script>
+		<script crossorigin="anonymous" defer
+			integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+			src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js">
+		</script>
 		<style>${require("./license.css")}</style>
 		<title>神楽坂一丁目通信局 - Webコンテンツの利用許諾</title>
 	</head>
-	<body>
-		${require("../loader/svg.js!./agpl-3.0.svg")}
-		<h1>Webコンテンツの利用許諾</h1>
-		<p>神楽坂一丁目通信局と、その他の権利所有者は、<code>https://kagucho.net/api</code>で始まるURIで特定されるWebコンテンツに関して全ての権利を保持し、それぞれの利用に際し許諾が必要です。その他の<code>https://kagucho.net</code>で始まるURIで特定されるWebコンテンツに関しては、<a href="agpl-3.0"><i>GNU Affero General Public License version 3</i></a>に基づいた利用を許諾します。</p>
-		<h2>外部の著作物</h2>
-		<p>Webコンテンツは一部に外部の著作物を含みます。これらはそれぞれの権利保有者により利用を許諾されています。以下にそれらを列挙します。</p>
-		<h3>Babel v6.19.0</h3>
-		<blockquote cite="https://github.com/babel/babel/blob/v6.19.0/LICENSE"
-			lang="en">
-			<pre>
-MIT License
+	<body class="container">
+		<main>
+			<article>
+				<header>
+					${require("../loader/svg!./agpl-3.0.svg")}
+					<h1>Webコンテンツの利用許諾</h1>
+				</header>
+				<p>神楽坂一丁目通信局と、その他の権利所有者は、<code>https://kagucho.net/api</code>で始まるURIで特定されるWebコンテンツに関して全ての権利を保持し、それぞれの利用に際し許諾が必要です。その他の<code>https://kagucho.net</code>で始まるURIで特定されるWebコンテンツに関しては、<a href="agpl-3.0"><i>GNU Affero General Public License version 3</i></a>に基づいた利用を許諾します。</p>
+				<section>
+					<h2>外部の著作物</h2>
+					<p>Webコンテンツは一部に外部の著作物を含みます。これらはそれぞれの権利保有者により利用を許諾されています。以下にそれらを列挙します。</p>
+					<section>
+						<h3>Babel v6.19.0</h3>
+						<blockquote cite="https://github.com/babel/babel/blob/v6.19.0/LICENSE"
+							lang="en">
+<pre>MIT License
 
 Copyright (c) 2014-2016 Sebastian McKenzie &lt;sebmck@gmail.com&gt;
 
@@ -65,13 +78,43 @@ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-			</pre>
-		</blockquote>
-	<h3>Go</h3>
-		<blockquote cite="https://golang.org/LICENSE" lang="en">
-			<pre>
-Copyright (c) 2009 The Go Authors. All rights reserved.
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</pre>
+						</blockquote>
+					</section>
+					<section>
+						<h3>Date Range Picker for Bootstrap v2.1.25</h3>
+						<blockquote
+							cite="https://github.com/dangrossman/bootstrap-daterangepicker/tree/v2.1.25#license"
+							lang="en">
+<p>The MIT License (MIT)</p>
+
+<p>Copyright (c) 2012-2016 Dan Grossman</p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</p>
+						</blockquote>
+					</section>
+					<section>
+						<h3>Go</h3>
+						<blockquote
+							cite="https://golang.org/LICENSE"
+							lang="en">
+<pre>Copyright (c) 2009 The Go Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -97,17 +140,17 @@ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
 DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-			</pre>
-		</blockquote>
-		<h3>Mithril.js v0.2.5</h3>
-		<blockquote
-			cite="https://github.com/lhorie/mithril.js/blob/v0.2.5/LICENSE"
-			lang="en">
-			<pre>
-The MIT License (MIT)
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</pre>
+						</blockquote>
+					</section>
+					<section>
+						<h3>Mithril.js v1.0.1</h3>
+						<blockquote
+							cite="https://github.com/lhorie/mithril.js/blob/v1.0.1/LICENSE"
+							lang="en">
+<pre>The MIT License (MIT)
 
-Copyright (c) 2014 Leo Horie
+Copyright (c) 2017 Leo Horie
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -125,15 +168,44 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-			</pre>
-		</blockquote>
-		<h3>PostCSS-cssnext 2.9.0</h3>
-		<blockquote
-			cite="https://github.com/MoOx/postcss-cssnext/blob/2.9.0/LICENSE"
-			lang="en">
-			<pre>
-The MIT License (MIT)
+SOFTWARE.</pre>
+						</blockquote>
+					</section>
+					<section>
+						<h3>Moment 2.17.1</h3>
+						<blockquote
+							cite="https://github.com/moment/moment/blob/2.17.1/LICENSE"
+							lang="en">
+<pre>Copyright (c) JS Foundation and other contributors
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.</pre>
+						</blockquote>
+					</section>
+					<section>
+						<h3>PostCSS-cssnext 2.9.0</h3>
+						<blockquote
+							cite="https://github.com/MoOx/postcss-cssnext/blob/2.9.0/LICENSE"
+							lang="en">
+<pre>The MIT License (MIT)
 
 Copyright (c) 2014 Maxime Thirouin
 
@@ -153,17 +225,15 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-			</pre>
-		</blockquote>
-	<h3>Webpack v1.13.3</h3>
-		<blockquote
-			cite="https://github.com/webpack/webpack/blob/v1.13.3/LICENSE"
-			lang="en">
-			<pre>
-(The MIT License)
-
-Copyright (c) 2012 - 2015 Tobias Koppers
+SOFTWARE.</pre>
+						</blockquote>
+					</section>
+					<section>
+						<h3>Webpack v2.2.0</h3>
+						<blockquote
+							cite="https://github.com/webpack/webpack/blob/v2.2.0/LICENSE"
+							lang="en">
+<pre>Copyright JS Foundation and other contributors
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -182,15 +252,15 @@ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-			</pre>
-		</blockquote>
-	<h3>bootstrap v3.3.7</h3>
-		<blockquote
-			cite="https://github.com/twbs/bootstrap/blob/v3.3.7/LICENSE"
-			lang="en">
-			<pre>
-The MIT License (MIT)
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</pre>
+						</blockquote>
+					</section>
+					<section>
+						<h3>bootstrap v3.3.7</h3>
+						<blockquote
+							cite="https://github.com/twbs/bootstrap/blob/v3.3.7/LICENSE"
+							lang="en">
+<pre>The MIT License (MIT)
 
 Copyright (c) 2011-2016 Twitter, Inc.
 
@@ -210,15 +280,15 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-			</pre>
-		</blockquote>
-		<h3>jQuery v3.1.1</h3>
-		<blockquote
-			cite="https://github.com/jquery/jquery/blob/3.1.1/LICENSE.txt"
-			lang="en">
-			<pre>
-Copyright jQuery Foundation and other contributors, https://jquery.org/
+THE SOFTWARE.</pre>
+						</blockquote>
+					</section>
+					<section>
+						<h3>jQuery v3.1.1</h3>
+						<blockquote
+							cite="https://github.com/jquery/jquery/blob/3.1.1/LICENSE.txt"
+							lang="en">
+<pre>Copyright jQuery Foundation and other contributors, https://jquery.org/
 
 This software consists of voluntary contributions made by many
 individuals. For exact contribution history, see the revision history
@@ -253,16 +323,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 All files located in the node_modules and external directories are
 externally maintained libraries used by this software which have their
 own licenses; we recommend you read them, as their terms may differ from
-the terms above.
-			</pre>
-		</blockquote>
-		<script crossorigin="anonymous"
-			integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7"
-			src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js">
-		</script>
-		<script crossorigin="anonymous" defer
-			integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-			src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js">
-		</script>
+the terms above.</pre>
+						</blockquote>
+					</section>
+				</section>
+			</article>
+		</main>
 	</body>
 </html>

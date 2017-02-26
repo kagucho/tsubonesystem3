@@ -38,7 +38,7 @@ export GOPATH=/somewhere/nice
 2\. Download TsuboneSystem3 with `go get`.
 
 ```
-go get -d github.com/kagucho/tsubonesystem3
+go get -d github.com/kagucho/tsubonesystem3/...
 cd $GOPATH/src/github.com/kagucho/tsubonesystem3
 ```
 
@@ -76,6 +76,15 @@ make
 
 make provides other helpful targets; see `Makefile`.
 
+### Testing Database
+The testing database is named `test.sql` and it includes records useful for
+testing.
+
+The passwords in `members` table is encrypted with `DBPasswordKey` in
+`configuration/example/configuration.go`. The raw passwords are `NthPassword`,
+where `N` is the member number. For example, the username and the password for
+member 1 is `1stDisplayID` and `1stPassword`.
+
 # License
 This software is licensed under AGPL-3.0. See `COPYING.TXT`.
 
@@ -83,6 +92,7 @@ This software is licensed under AGPL-3.0. See `COPYING.TXT`.
 This application implicitly conforms to the following standards.
 
 * [Accessible Rich Internet Applications (WAI-ARIA) 1.0](https://www.w3.org/TR/2014/REC-wai-aria-20140320/)
+* [CSS Snapshot 2017](https://www.w3.org/TR/css-2017/)
 * [DOM Standard](https://dom.spec.whatwg.org/)
 * [ECMAScript® 2016 Language Specification](http://www.ecma-international.org/ecma-262/7.0/index.html)
 * [Encoding Standard](https://encoding.spec.whatwg.org/)

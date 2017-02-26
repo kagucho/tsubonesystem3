@@ -30,9 +30,9 @@ func ListServeHTTP(writer http.ResponseWriter, request *http.Request,
 	common.ServeJSON(writer, context.DB.QueryClubs(), http.StatusOK)
 }
 
-// ListNameServeHTTP serves the functionality of API v0 to list the names
+// ListnamesServeHTTP serves the functionality of API v0 to list the names
 // of the clubs via HTTP.
-func ListNameServeHTTP(writer http.ResponseWriter, request *http.Request,
-	context context.Context, claim authorizer.Claim) {
+func ListnamesServeHTTP(writer http.ResponseWriter, request *http.Request,
+	context context.Context) {
 	common.ServeJSON(writer, context.DB.QueryClubNames(), http.StatusOK)
 }

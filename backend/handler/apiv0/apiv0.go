@@ -27,52 +27,85 @@ import (
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/token/authorizer"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/token/backend"
 	"github.com/kagucho/tsubonesystem3/backend/mail"
+	"log"
 	"net/http"
+	"runtime/debug"
 )
 
-// Apiv0 is a structure to hold the context of API v0.
-type Apiv0 struct {
+// APIv0 is a structure to hold the context of API v0.
+type APIv0 struct {
 	context context.Context
 	public  public.Public
 }
 
-// New returns a new Apiv0.
-func New(db db.DB, mail mail.Mail) (Apiv0, error) {
+type apiv0Writer struct {
+	http.ResponseWriter
+	header http.Header
+	written *bool
+}
+
+func (writer apiv0Writer) Header() http.Header {
+	return writer.header
+}
+
+func (writer apiv0Writer) Write(bytes []byte) (int, error) {
+	writer.prepare()
+	return writer.ResponseWriter.Write(bytes)
+}
+
+func (writer apiv0Writer) WriteHeader(code int) {
+	writer.prepare()
+	writer.ResponseWriter.WriteHeader(code)
+}
+
+func (writer apiv0Writer) prepare() {
+	if !*writer.written {
+		*writer.written = true
+
+		header := writer.ResponseWriter.Header()
+		for key, value := range writer.header {
+			header[key] = value
+		}
+	}
+}
+
+// New returns a new APIv0.
+func New(db db.DB, mail mail.Mail) (APIv0, error) {
 	token, tokenError := backend.New()
 	if tokenError != nil {
-		return Apiv0{}, tokenError
+		return APIv0{}, tokenError
 	}
 
-	return Apiv0{context.Context{db, mail, token}, public.New()}, nil
+	return APIv0{context.Context{db, mail, token}, public.New()}, nil
 }
 
 // ServeHTTP servs API v0 via HTTP.
-func (apiv0 Apiv0) ServeHTTP(writer http.ResponseWriter,
-	request *http.Request) {
-	route := func() func() {
-		defer common.Recover(writer)
+func (apiv0 APIv0) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	written := false
+	apiv0Writer := apiv0Writer{writer, http.Header{}, &written}
 
-		publicRoute := apiv0.public.GetRoute(request.URL.Path)
-		if publicRoute != nil {
-			return func() {
-				publicRoute(writer, request, apiv0.context)
-			}
-		}
+	defer func() {
+		if !written {
+			common.ServeErrorDefault(writer, http.StatusInternalServerError)
 
-		privateRoute := private.GetRoute(request.URL.Path)
-		if privateRoute.Handle == nil {
-			return func() {
-				common.ServeErrorDefault(writer, http.StatusNotFound)
-			}
-		}
-
-		return func() {
-			authorizer.Authorize(
-				writer, request, apiv0.context, privateRoute)
+			log.Print(recover())
+			debug.PrintStack()
 		}
 	}()
 
-	if route != nil {
-		route()
+	publicRoute := apiv0.public.GetRoute(request.URL.Path)
+	if publicRoute != nil {
+		publicRoute(apiv0Writer, request, apiv0.context)
+
+		return
 	}
+
+	privateRoute := private.GetRoute(request.URL.Path)
+	if privateRoute.Handle == nil {
+		common.ServeErrorDefault(apiv0Writer, http.StatusNotFound)
+
+		return
+	}
+
+	authorizer.Authorize(apiv0Writer, request, apiv0.context, privateRoute)
 }

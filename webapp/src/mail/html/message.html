@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<!--
+	ATTENTION: The content included in the article tag is under a respective
+	copyright.
+	THE FOLLOWING NOTICE IS NOT BE APPLIED FOR THAT CONTENT!
+
+	Copyright (C) 2017  Kagucho <kagucho.net@gmail.com>
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published
+	by the Free Software Foundation, either version 3 of the License, or (at
+	your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html lang="ja" style="width: 100%;">
+	<head>
+		<link crossorigin="anonymous"
+			href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"
+			integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+			rel="stylesheet">
+	</head>
+	<body style="display: flex; flex-direction: column; min-width: 100%;">
+		<article class="container">
+			<address>From: <a href={{.FromReference}}>{{.From}}</a></address>
+			<pre>{{.Body}}</pre>
+		</article>
+		<footer style="background-image: url(${require('!!url-loader!../../images/footer.png')}); background-position: right; background-repeat: no-repeat; background-size: contain; border-color: black; border-top-style: solid; border-width: .1rem; flex: 1; padding-top: 1rem;">
+			<p><a href="{{.Base}}/private">TsuboneSystem</a></p>
+		</footer>
+	</body>
+</html>

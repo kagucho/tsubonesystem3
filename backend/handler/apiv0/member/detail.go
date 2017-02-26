@@ -19,12 +19,12 @@ package member
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"github.com/kagucho/tsubonesystem3/backend/db"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/common"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/context"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/token/authorizer"
+	"github.com/kagucho/tsubonesystem3/backend/mail"
 	"github.com/kagucho/tsubonesystem3/backend/scope"
 	"net/http"
 )
@@ -32,28 +32,28 @@ import (
 type jsonMessage []byte
 
 type publicDetail struct {
-	Affiliation string      `json:"affiliation",omitempty`
+	Affiliation string      `json:"affiliation,omitempty"`
 	Clubs       jsonMessage `json:"clubs"`
-	Entrance    uint16      `json:"entrance",omitempty`
-	Gender      string      `json:"gender",omitempty`
+	Entrance    uint16      `json:"entrance,omitempty"`
+	Gender      string      `json:"gender,omitempty"`
 	Mail        string      `json:"mail"`
 	Nickname    string      `json:"nickname"`
 	OB          bool        `json:"ob"`
 	Positions   jsonMessage `json:"positions"`
-	Realname    string      `json:"realname",omitempty`
+	Realname    string      `json:"realname,omitempty"`
 }
 
 type privateDetail struct {
 	publicDetail
-	Confirmed bool `json:"confirmed",omitempty`
-	Tel string `json:"tel",omitempty`
+	Confirmed bool `json:"confirmed"`
+	Tel string `json:"tel,omitempty"`
 }
 
 func (message jsonMessage) MarshalJSON() ([]byte, error) {
 	return message, nil
 }
 
-func position(member db.Member) (bool, jsonMessage, jsonMessage) {
+func position(member db.MemberDetail) (bool, jsonMessage, jsonMessage) {
 	chief := false
 
 	clubs := bytes.NewBuffer(make(jsonMessage, 0, 2))
@@ -135,55 +135,47 @@ func position(member db.Member) (bool, jsonMessage, jsonMessage) {
 // via HTTP.
 func DetailServeHTTP(writer http.ResponseWriter, request *http.Request,
 	context context.Context, claim authorizer.Claim) {
-	serve := func() func() {
-		defer common.Recover(writer)
+	id := request.FormValue(`id`)
+	detail, queryError := context.DB.QueryMemberDetail(id)
 
-		id := request.FormValue(`id`)
-		member, queryError := context.DB.QueryMember(id)
-
-		switch queryError {
-		case nil:
-			inPosition, clubs, positions := position(member)
-
-			public := publicDetail{
-				Affiliation: member.Affiliation,
-				Clubs:       clubs,
-				Entrance:    member.Entrance,
-				Gender:      member.Gender,
-				Mail:        member.Mail,
-				Nickname:    member.Nickname,
-				OB:          member.OB,
-				Positions:   positions,
-				Realname:    member.Realname,
-			}
-
-			var unmarshalled interface{}
-			if inPosition || claim.Sub == id || claim.Scope.IsSet(scope.Privacy) {
-				unmarshalled = privateDetail{public, member.Confirmed, member.Tel}
-			} else {
-				unmarshalled = public
-			}
-
-			return func() {
-				common.ServeJSON(writer, unmarshalled,
-					http.StatusOK)
-			}
-
-		case sql.ErrNoRows:
-			return func() {
-				common.ServeError(writer,
-					common.Error{
-						ID:          `invalid_id`,
-						Description: `invalid ID`,
-					}, http.StatusBadRequest)
-			}
-
-		default:
-			panic(queryError)
+	switch queryError {
+	case nil:
+		mail, mailError := mail.AddressToUnicode(detail.Mail)
+		if mailError != nil {
+			panic(mailError)
 		}
-	}()
 
-	if serve != nil {
-		serve()
+		inPosition, clubs, positions := position(detail)
+
+		public := publicDetail{
+			Affiliation: detail.Affiliation,
+			Clubs:       clubs,
+			Entrance:    detail.Entrance,
+			Gender:      detail.Gender,
+			Mail:        mail,
+			Nickname:    detail.Nickname,
+			OB:          detail.OB,
+			Positions:   positions,
+			Realname:    detail.Realname,
+		}
+
+		var unmarshalled interface{}
+		if inPosition || claim.Scope.IsSet(scope.Privacy) {
+			unmarshalled = privateDetail{public, detail.Confirmed, detail.Tel}
+		} else {
+			unmarshalled = public
+		}
+
+		common.ServeJSON(writer, unmarshalled, http.StatusOK)
+
+	case db.IncorrectIdentity:
+		common.ServeError(writer,
+			common.Error{
+				ID:          `invalid_id`,
+				Description: `invalid ID`,
+			}, http.StatusBadRequest)
+
+	default:
+		panic(queryError)
 	}
 }

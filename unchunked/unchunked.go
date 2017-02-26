@@ -73,15 +73,13 @@ func (unchunked Unchunked) ServeHTTP(writer http.ResponseWriter, request *http.R
 			unchunkedResponseWriter: commonWriter,
 		}
 
-		/*
-			According to the document,
-			> The error returned will be nil if the level is valid.
-
-			I'm really certain, so ignore it.
-		*/
-		gzipWriter.gzip, _ = gzip.NewWriterLevel(
+		var gzipError error
+		gzipWriter.gzip, gzipError = gzip.NewWriterLevel(
 			&gzipWriter.unchunkedResponseWriter.state.buffer,
 			gzip.BestCompression)
+		if gzipError != nil {
+			panic(gzipError)
+		}
 
 		unchunked.handle(gzipWriter, request)
 		gzipWriter.finalize()

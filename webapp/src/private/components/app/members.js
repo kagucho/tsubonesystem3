@@ -1,5 +1,5 @@
 /**
-	@file members.js implements the feature to show members.
+	@file members.js implements members component.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
 	@license AGPL-3.0+
@@ -10,61 +10,166 @@
 /**
 	module:private/components/app/members is a component to show members.
 	@name module:private/components/app/members
-	@type external:Mithril~Component
+	@type !external:Mithril~Component
 */
 
-import * as client from "../../client";
 import * as container from "../container";
-import * as modal from "../member/modal";
+import * as modal from "../../modal";
 import * as progress from "../progress";
 import ProgressSum from "../../../progress_sum";
+import Table from "../table";
+import client from "../../client";
 import large from "../../large";
-import {members} from "../table";
+import memberModal from "../member/modal";
 
-export class controller {
-	constructor() {
-		this.param = m.route.param();
-		this.progress = new ProgressSum;
-		this.load();
+/**
+	addMember prompts the user to add a new member.
+	@private
+	@this module:private/components/app/members
+	@returns {!Boolean} false if the user agent should not leave this page.
+*/
+function addMember() {
+	if (large()) {
+		this.memberModal = modal.push(memberModal(null, registerLoading.bind(this)));
+
+		return false;
 	}
 
-	addMember() {
-		if (large()) {
-			this.adding = true;
+	return true;
+}
 
-			return false;
-		}
-	}
+/**
+	setTableState sets the state of the table.
+	@private
+	@this module:private/components/app/members
+	@param {!external:Mithril~Node} node - The node of the table.
+	@returns {Undefined}
+*/
+function setTableState(node) {
+	this.tableState = node.state;
+}
 
-	endAddingMember() {
-		delete this.adding;
-	}
+/**
+	filter filters the member to show.
+	@private
+	@this module:private/components/app/members
+	@returns {Undefined}
+*/
+function filter() {
+	this.count = 0;
 
-	load() {
-		this.progress.add(client.memberList().then(got => {
-			this.members = got;
-		}, xhr => {
-			this.error = client.error(xhr) || "どうしようもないエラーが発生しました。";
-		}));
-	}
-
-	update(key, value) {
-		if (value) {
-			this.param[key] = value;
+	for (const member of this.members) {
+		if ((!this.param.entrance ||
+				member.entrance == this.param.entrance) &&
+			(!this.param.nickname ||
+				member.nickname.includes(this.param.nickname)) &&
+			(!this.param.ob ||
+				this.param.ob == "1" && member.ob ||
+				this.param.ob == "0" && !member.ob) &&
+			(!this.param.realname ||
+				member.realname.includes(this.param.realname))) {
+			member.display = true;
+			this.count++;
 		} else {
-			delete this.param[key];
+			member.display = false;
 		}
-
-		let url = "#!members";
-		if (!$.isEmptyObject(this.param)) {
-			url += "?" + m.route.buildQueryString(this.param);
-		}
-
-		history.pushState(null, null, url);
 	}
 }
 
-export function view(control) {
+/**
+	load loads the remote content.
+	@private
+	@this module:private/components/app/members
+	@returns {Undefined}
+*/
+function load() {
+	this.progress.add(client.memberList().then(got => {
+		this.members = got;
+		filter.call(this);
+	}, xhr => {
+		this.error = client.error(xhr) || "どうしようもないエラーが発生しました。";
+	}));
+}
+
+/**
+	registerLoading registers a loading.
+	@private
+	@this module:private/components/app/members
+	@param {!external:jQuery~Promise} promise - A promise describing the
+	loading.
+	@returns {Undefined}
+*/
+function registerLoading(promise) {
+	this.progress.add(promise.done(
+		submission => submission && load.call(this)));
+}
+
+/**
+	update updates the value identified by the given key.
+	@private
+	@this module:private/components/app/members
+	@param {!String} key - The key to identify the value.
+	@param {!String} value - The new value to be set.
+	@returns {Undefined}
+*/
+function update(key, value) {
+	if (value) {
+		this.param[key] = value;
+	} else {
+		delete this.param[key];
+	}
+
+	let url = "#!members";
+	if (!$.isEmptyObject(this.param)) {
+		url += "?" + m.buildQueryString(this.param);
+	}
+
+	history.pushState(null, null, url);
+	filter.call(this);
+}
+
+/**
+	tableView returns the virtual DOM nodes of a table.
+	@private
+	@param {!Array} entries - Entries of the table.
+	@param {!module:private/components/table~NicknameView} nicknameView
+	- The view of nicknames.
+	@returns {external:Mithril~Children}
+*/
+const tableView = (entries, nicknameView) => [
+	m("thead", m("tr", {style: {backgroundColor: "#d9edf7"}},
+		m("th", "ニックネーム"),
+		m("th", "名前"),
+		m("th", "入学年度")
+	)), m("tbody", entries.map(entry => m("tr", {
+		"aria-hidden": (!entry.display).toString(),
+		key:           entry.id,
+		style:         {display: entry.display ? "table-row" : "none"},
+	},
+		m("td", nicknameView(entry)),
+		m("td", entry.realname),
+		m("td", entry.entrance)
+	))),
+];
+
+export function oninit() {
+	this.param = m.route.param();
+	this.progress = new ProgressSum;
+	this.table = new Table(tableView);
+	load.call(this);
+}
+
+export function onbeforeremove() {
+	if (this.memberModal) {
+		this.memberModal.remove();
+	}
+
+	if (this.tableState.modal) {
+		this.tableState.modal.remove();
+	}
+}
+
+export function view() {
 	const content = [
 		m("div", {
 			role:  "search",
@@ -86,10 +191,10 @@ export function view(control) {
 						id:        "component-app-members-nickname",
 						maxlength: "63",
 						oninput:   m.withAttr("value",
-							control.update.bind(control, "nickname")),
+							update.bind(this, "nickname")),
 						placeholder: "Nickname",
 						type:        "search",
-						value:       control.param.nickname || "",
+						value:       this.param.nickname || "",
 					}),
 				}, {
 					label: m("label", {
@@ -101,10 +206,10 @@ export function view(control) {
 						id:        "component-app-members-realname",
 						maxlength: "63",
 						oninput:   m.withAttr("value",
-							control.update.bind(control, "realname")),
+							update.bind(this, "realname")),
 						placeholder: "Name",
 						type:        "search",
-						value:       control.param.realname || "",
+						value:       this.param.realname || "",
 					}),
 				}, {
 					label: m("label", {
@@ -117,10 +222,10 @@ export function view(control) {
 						max:       "2155",
 						min:       "1901",
 						oninput:   m.withAttr("value",
-							control.update.bind(control, "entrance")),
+							update.bind(this, "entrance")),
 						placeholder: "Entrance",
 						type:        "number",
-						value:       control.param.entrance,
+						value:       this.param.entrance,
 					}),
 				},
 			].map(object => m("div", {
@@ -153,27 +258,20 @@ export function view(control) {
 				{
 					label: "OBのみ",
 					value: "1",
-				},
-				{
+				}, {
 					label: "現役のみ",
 					value: "0",
-				},
-				{
+				}, {
 					label: "OB/現役不問",
 					value: null,
 				},
-			].map(object => m("label", {
-				className: "form-group",
-			},
+			].map(object => m("label", {className: "form-group"},
 				m("input", {
-					checked:   object.value == control.param.ob,
+					checked:   object.value == this.param.ob,
 					className: "radio-inline",
 					name:      "ob",
-					oninput:   m.withAttr("checked", function(checked) {
-						if (checked) {
-							this.control.update("ob", this.value);
-						}
-					}.bind({control, value: object.value})),
+					oninput:   m.withAttr("checked",
+						checked => checked && update.call(this, "ob", object.value)),
 					style: {margin: "0"},
 					type:  "radio",
 				}), m("span", {
@@ -183,43 +281,20 @@ export function view(control) {
 		),
 	];
 
-	const onloadstart = (function(promise) {
-		this.progress.add(promise.done(
-			submission => submission && this.load()));
-	}).bind(control);
-
-	if (control.error) {
+	if (this.error) {
 		content.push(
 			m("div", {
 				className: "alert alert-danger",
 				role:      "alert",
 			},
-			m("span", {ariaHidden: "true"},
+			m("span", {"aria-hidden": "true"},
 				m("span", {className: "glyphicon glyphicon-exclamation-sign"}),
 				" "
-			), control.error
+			), this.error
 		));
 	}
 
-	if (control.members) {
-		const showingMembers = new Array(control.members.length);
-		let count = 0;
-
-		for (const member of control.members) {
-			if ((!control.param.entrance ||
-					member.entrance == control.param.entrance) &&
-				(!control.param.nickname ||
-					member.nickname.includes(control.param.nickname)) &&
-				(!control.param.ob ||
-					control.param.ob == "1" && member.ob ||
-					control.param.ob == "0" && !member.ob) &&
-				(!control.param.realname ||
-					member.realname.includes(control.param.realname))) {
-				showingMembers[count] = member;
-				count++;
-			}
-		}
-
+	if (this.members) {
 		content.push(m("div",
 			m("p", {
 				className: "lead",
@@ -227,36 +302,34 @@ export function view(control) {
 					clear: "both",
 					color: "gray",
 				},
-			}, count + " 件"),
+			}, this.count + " 件"),
 			m("div", {style: {margin: "1rem"}},
 				m("a", {
 					className: "btn btn-primary",
 					href:      "#!member",
-					onclick:   control.addMember.bind(control),
-				}, "追加")
+					onclick:   addMember.bind(this),
+				},
+					m("span", {"aria-hidden": "true"},
+						m("span", {className: "glyphicon glyphicon-plus"}),
+						" "
+					), "追加"
+				)
 			),
-			m("div", {
-				className: "table-responsive",
-				style:     {margin: "1rem"},
-			},
-				 m(members, {
-					members: showingMembers,
-					onloadstart,
+			m("div", {style: {margin: "1rem"}},
+				 m(this.table, {
+					members:     this.members,
+					oncreate:    setTableState.bind(this),
+					onloadstart: registerLoading.bind(this),
 				})
 			)
 		));
 	}
 
 	return [
-		m(progress, control.progress.html()),
+		m(progress, this.progress.html()),
 		m(container, m("div", {className: "container"},
 			m("h1", "Members"),
 			m("div", content)
 		)),
-		control.adding && m(modal, {
-			id:       null,
-			onhidden: control.endAddingMember.bind(control),
-			onloadstart,
-		}),
 	];
 }

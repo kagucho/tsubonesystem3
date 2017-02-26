@@ -27,6 +27,7 @@ delete webpackConfig.plugins.shift();
 // An alternative for CDN.
 webpackConfig.plugins.push(new webpack.ProvidePlugin({$: "jquery"}));
 
+console.log(process.env.TSUBONESYSTEM_URL + "/api");
 module.exports = config => config.set({
 	files: [
 		"node_modules/mithril/mithril.js",
@@ -42,7 +43,7 @@ module.exports = config => config.set({
 		"karma-webpack",
 	],
 	preprocessors: {"src/**/*_test.js": ["webpack", "sourcemap", "coverage"]},
-	proxies:       {"/api": process.env.TSUBONESYSTEM_URL + "api"},
+	proxies:       {"/api": process.env.TSUBONESYSTEM_URL + "/api"},
 	reporters:     ["coverage", "progress"],
 	webpack:       webpackConfig,
 });

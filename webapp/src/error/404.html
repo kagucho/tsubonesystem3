@@ -22,23 +22,9 @@
 			href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"
 			integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
 			rel="stylesheet">
+		<link href="/error.css" rel="stylesheet">
 		<link href="/footer.css" rel="stylesheet">
-		<title>神楽坂一丁目通信局 - ページが見つかりませんでした</title>
-	</head>
-	<body>
-		<img alt="ロゴ" class="hidden-xs pull-right"
-			src="../images/logo250c_black.png" />
-		<h1 class="text-nowrap">神楽坂一丁目通信局</h1>
-		<h2>ページが見つかりませんでした</h2>
-		<h3>どうしよう?</h3>
-		<h4>このサイトにあるリンクを踏んでここに来た。</h4>
-		<p><a href="mailto:kagucho.net@gmail.com">kagucho.net@gmail.com</a>へ報告してください。お願いします。あなたの好意が世界を救います。</p>
-		<h4>自分でURLを入力した。</h4>
-		<p>打ち間違えてないか確認してください。打ち間違えてない? それは困った。お役に立てそうにない。</p>
-		<h4>トライフォースを探しにここに来た。</h4>
-		<p>ここにはないです。本当に。</p>
-		${require("../footer.html")}
-		<script crossorigin="anonymous"
+		<script crossorigin="anonymous" defer
 			integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7"
 			src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js">
 		</script>
@@ -46,5 +32,32 @@
 			integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
 			src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js">
 		</script>
+		<title>神楽坂一丁目通信局 - ページが見つかりませんでした</title>
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<img alt="ロゴ" class="hidden-xs pull-right"
+					src="../images/logo250c_black.png" />
+				<h1 class="text-nowrap">神楽坂一丁目通信局</h1>
+			</header>
+			<main>
+				<article>
+					<h2>ページが見つかりませんでした</h2>
+					<section>
+						<h3>どうしよう?</h3>
+						<dl>
+							<dt>このサイトにあるリンクを踏んでここに来た。</dt>
+							<dd><a href="mailto:kagucho.net@gmail.com">kagucho.net@gmail.com</a>へ報告してください。お願いします。あなたの好意が世界を救います。</dd>
+							<dt>自分でURIを入力した。</dt>
+							<dd>打ち間違えてないか確認してください。打ち間違えてない? それは困った。お役に立てそうにない。</dd>
+							<dt>トライフォースを探しにここに来た。</dt>
+							<dd>ここにはないです。本当に。</dd>
+						</dl>
+					</section>
+				</article>
+			</main>
+		</div>
+		${require("../footer.html")}
 	</body>
 </html>

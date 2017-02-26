@@ -7,25 +7,29 @@
 
 export default class {
 	constructor() {
+		this.computable = false;
 		this.loaded = 0;
 		this.total = 0;
 	}
 
 	add(promise) {
-		const context = {sum: this, previous: {loaded: 0, total: 0}};
+		let previous = {loaded: 0, total: 0};
 
-		promise.progress((function(event) {
-			this.sum.loaded += event.loaded - this.previous.loaded;
-			this.sum.total += event.total - this.previous.total;
+		promise.progress(event => {
+			this.computable = true;
+			this.loaded += event.loaded - previous.loaded;
+			this.total += event.total - previous.total;
 
-			this.previous = event;
-		}).bind(context)).always((function() {
-			this.sum.loaded -= this.previous.loaded;
-			this.sum.total -= this.previous.total;
-		}).bind(context));
+			previous = event;
+		}).always(() => {
+			this.loaded -= previous.loaded;
+			this.total -= previous.total;
+		});
 	}
 
 	html() {
-		return {max: this.total, value: this.loaded};
+		return this.total == this.loaded ?
+			{value: this.computable ? 1 : 0} :
+			{max: this.total, value: this.loaded};
 	}
 }

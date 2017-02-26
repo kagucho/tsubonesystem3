@@ -31,12 +31,16 @@ const getFileEntry = name => ({
 
 const htmlEntry = {
 	loader:  "html-loader",
-	options: {interpolate: "require"},
+	options: {interpolate: true, minifyCSS: false, removeComments: false},
 };
 
 module.exports = {
 	// You SHOULD add html entrypoints to vnu task of package.json.
 	entry: [
+		"!!file-loader?name=../graph!./loader/extract!html-loader?interpolate=require?removeComments=false!./src/graph.html",
+		"!!file-loader?name=error.css!./loader/extract!css-loader!postcss-loader!./src/error/common.css",
+		"!!file-loader?name=favicon.ico!./src/favicon.ico",
+		"!!file-loader?name=footer.css!./loader/extract!css-loader!postcss-loader!./src/footer.css",
 		"./src/error/301.html",
 		"./src/error/400.html",
 		"./src/error/404.html",
@@ -53,17 +57,18 @@ module.exports = {
 		"./src/error/501.html",
 		"./src/error/503.html",
 		"./src/error/unknown.html",
-		"./src/graph.html",
+		"./src/mail/html/message.html",
 		"./src/mail/html/confirmation.html",
 		"./src/mail/html/creation.html",
+		"./src/mail/html/invitation.html",
+		"./src/mail/text/message.txt",
 		"./src/mail/text/confirmation.txt",
 		"./src/mail/text/creation.txt",
-		"./src/footer.css",
+		"./src/mail/text/invitation.txt",
 		"./src/agpl-3.0.html",
 		"./src/index.html",
 		"./src/license.html",
 		"./src/private/index.html",
-		"file-loader?name=[name].[ext]!./src/favicon.ico",
 	],
 	module: {
 		rules: [
@@ -71,45 +76,29 @@ module.exports = {
 				include: path.resolve(__dirname, "src/footer.html"),
 				loader:  "html-loader",
 			}, {
-				include: path.resolve(__dirname, "src/footer.css"),
-				use:     [
-					getFileEntry("footer.css"),
-					"./loader/extract.js",
-					"css-loader",
-					"postcss-loader",
-				],
-			}, {
 				test:    /\.css$/,
-				exclude: path.resolve(__dirname, "src/footer.css"),
 				loaders: ["css-loader", "postcss-loader"],
 			}, {
 				test:    /\.html$/,
 				include: path.resolve(__dirname, "src/error"),
 				use:     [
 					getFileEntry("../error/[name]"),
-					"./loader/extract.js",
-					htmlEntry,
-				],
-			}, {
-				include: path.resolve(__dirname, "src/graph.html"),
-				use:     [
-					getFileEntry("../graph"),
-					"./loader/extract.js",
+					"./loader/extract",
 					htmlEntry,
 				],
 			}, {
 				include: path.resolve(__dirname, "src/mail/html"),
 				use:     [
 					getFileEntry("../mail/html/[name]"),
-					"./loader/unix2dos.js",
-					"./loader/extract.js",
+					"./loader/unix2dos",
+					"./loader/extract",
 					htmlEntry,
 				],
 			}, {
 				include: path.resolve(__dirname, "src/private/index.html"),
 				use:     [
 					getFileEntry("private"),
-					"./loader/extract.js",
+					"./loader/extract",
 					htmlEntry,
 				],
 			}, {
@@ -120,7 +109,7 @@ module.exports = {
 				].map(file => path.resolve(__dirname, file)),
 				use: [
 					getFileEntry("[name]"),
-					"./loader/extract.js",
+					"./loader/extract",
 					htmlEntry,
 				],
 			}, {
@@ -144,11 +133,16 @@ module.exports = {
 				include: path.resolve(__dirname, "src/mail/text"),
 				use:     [
 					getFileEntry("../mail/text/[name]"),
-					"./loader/unix2dos.js",
+					"./loader/unix2dos",
 				],
 			},
 		],
 	},
 	output:  {filename: "dummy", publicPath: "/"},
-	plugins: [omitDummy],
+	plugins: [omitDummy, require("./entry/plugin")],
 };
+
+if (process.env.NODE_ENV == "production") {
+	module.exports.plugins.push(
+		new (require("webpack/lib/optimize/UglifyJsPlugin"))({comments: null}));
+}

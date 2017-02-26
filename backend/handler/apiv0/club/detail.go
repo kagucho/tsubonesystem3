@@ -18,43 +18,38 @@
 package club
 
 import (
-	"database/sql"
+	"github.com/kagucho/tsubonesystem3/backend/db"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/common"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/context"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/token/authorizer"
+	"github.com/kagucho/tsubonesystem3/backend/mail"
 	"net/http"
 )
 
 // DetailServeHTTP serves the functionality of API v0 to detail a club via HTTP.
 func DetailServeHTTP(writer http.ResponseWriter, request *http.Request,
 	context context.Context, claim authorizer.Claim) {
-	serve := func() func() {
-		defer common.Recover(writer)
+	id := request.FormValue(`id`)
+	detail, queryError := context.DB.QueryClubDetail(id)
 
-		id := request.FormValue(`id`)
-		detail, queryError := context.DB.QueryClub(id)
-
-		switch queryError {
-		case nil:
-			return func() {
-				common.ServeJSON(writer, detail, http.StatusOK)
-			}
-
-		case sql.ErrNoRows:
-			return func() {
-				common.ServeError(writer,
-					common.Error{
-						ID:          `invalid_id`,
-						Description: `invalid ID`,
-					}, http.StatusBadRequest)
-			}
-
-		default:
-			panic(queryError)
+	switch queryError {
+	case nil:
+		var mailError error
+		detail.Chief.Mail, mailError = mail.AddressToUnicode(detail.Chief.Mail)
+		if mailError != nil {
+			panic(mailError)
 		}
-	}()
 
-	if serve != nil {
-		serve()
+		common.ServeJSON(writer, detail, http.StatusOK)
+
+	case db.IncorrectIdentity:
+		common.ServeError(writer,
+			common.Error{
+				ID:          `invalid_id`,
+				Description: `invalid ID`,
+			}, http.StatusBadRequest)
+
+	default:
+		panic(queryError)
 	}
 }

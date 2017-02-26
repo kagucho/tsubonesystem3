@@ -22,30 +22,9 @@
 			href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"
 			integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
 			rel="stylesheet">
+		<link href="/error.css" rel="stylesheet">
 		<link href="/footer.css" rel="stylesheet">
-		<title>神楽坂一丁目通信局 - 要求された範囲を満たすことができません</title>
-	</head>
-	<body>
-		<img alt="ロゴ" class="hidden-xs" src="../images/logo250c_black.png" />
-		<h1>神楽坂一丁目通信局</h1>
-		<h2>要求された範囲を満たすことができません</h2>
-		<h3>どういうこっちゃ</h3>
-		<p>Webページの要求する部分が指定されましたが、それは範囲外でした。</p>
-		<h3>どうすればいい?</h3>
-		<p>
-			対応しているWebブラウザを利用してください。次のとおりです。
-			<ul>
-				<li>Google Chrome 53以降</li>
-				<li>Microsoft Edge</li>
-				<li>Microsoft Internet Explorer 11以降</li>
-				<li>Mozilla Firefox 45以降</li>
-			</ul>
-			その他、インターネットへの経路上に問題がないか確認してください。
-		</p>
-		<h3>もちろん対応しているブラウザを使ってる。でもこのサイトだけおかしいんだけど?</h3>
-		<p>うちのサイトの方がおかしかったらごめんなさい。<a href="mailto:kagucho.net@gmail.com">kagucho.net@gmail.com</a>へ報告してください。お願いします。お願いだから無視しないで。</p>
-		${require("../footer.html")}
-		<script crossorigin="anonymous"
+		<script crossorigin="anonymous" defer
 			integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7"
 			src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js">
 		</script>
@@ -53,5 +32,37 @@
 			integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
 			src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js">
 		</script>
+		<title>神楽坂一丁目通信局 - 要求された範囲を満たすことができません</title>
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<img alt="ロゴ" class="hidden-xs"
+					src="../images/logo250c_black.png" />
+				<h1>神楽坂一丁目通信局</h1>
+			</header>
+			<main>
+			<article>
+				<h2>要求された範囲を満たすことができません</h2>
+				<dl>
+					<dt>どういうこっちゃ</dt>
+					<dd>Webページの要求する部分が指定されましたが、それは範囲外でした。</dd>
+					<dt>どうすればいい?</dt>
+					<dd>
+						対応しているWebブラウザを利用してください。次のとおりです。
+						<ul>
+							<li>Google Chrome 53以降</li>
+							<li>Microsoft Edge</li>
+							<li>Microsoft Internet Explorer 11以降</li>
+							<li>Mozilla Firefox 45以降</li>
+						</ul>
+						その他、インターネットへの経路上に問題がないか確認してください。
+					</dd>
+					<dt>もちろん対応しているブラウザを使ってる。でもこのサイトだけおかしいんだけど?</dt>
+					<dd>うちのサイトの方がおかしかったらごめんなさい。<a href="mailto:kagucho.net@gmail.com">kagucho.net@gmail.com</a>へ報告してください。お願いします。お願いだから無視しないで。</dd>
+				</dl>
+			</article>
+		</main>
+		${require("../footer.html")}
 	</body>
 </html>

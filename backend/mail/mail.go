@@ -18,34 +18,48 @@
 package mail
 
 import (
-	"errors"
-	"fmt"
 	htmlTemplate "html/template"
 	"log"
-	"mime"
 	"mime/multipart"
 	"mime/quotedprintable"
 	"net/mail"
 	"net/textproto"
 	"os/exec"
 	"path"
+	"strings"
 	textTemplate "text/template"
 	"time"
 )
 
 type Mail struct {
+	templates templates
+}
+
+type template struct{
 	html *htmlTemplate.Template
 	text *textTemplate.Template
 }
 
+type templates [templateTotal]template
+
 const contentType = `Content-Type`
 const contentTransferEncoding = `Content-Transfer-Encoding`
+const lineEnding = "\r\n"
 
 var contentTypeText = []string{`text/plain;charset=UTF-8`}
 var contentTypeHTML = []string{`text/html;charset=UTF-8`}
 var contentTransferEncodingCommon = []string{`quoted-printable`}
 
-var mails = []string{`creation`, `confirmation`}
+type templateID uint
+
+const (
+	templateConfirmation templateID = iota
+	templateCreation
+	templateInvitation
+	templateMessage
+
+	templateTotal
+)
 
 var textMIME = textproto.MIMEHeader{
 	contentType:             contentTypeText,
@@ -58,49 +72,43 @@ var htmlMIME = textproto.MIMEHeader{
 }
 
 func New(share string) (Mail, error) {
-	var mail Mail
+	var templates templates
 	var parseError error
 
-	htmlBase := path.Join(share, "mail/html")
-	textBase := path.Join(share, "mail/text")
+	htmlBase := path.Join(share, `mail/html`)
+	textBase := path.Join(share, `mail/text`)
 
-	mail.html, parseError = htmlTemplate.ParseFiles(path.Join(htmlBase, mails[0]))
-	if parseError != nil {
-		return mail, parseError
-	}
-
-	mail.text, parseError = textTemplate.ParseFiles(path.Join(textBase, mails[0]))
-	if parseError != nil {
-		return mail, parseError
-	}
-
-	for index := 1; index < len(mails); index++ {
-		_, parseError = mail.html.ParseFiles(path.Join(htmlBase, mails[index]))
+	for index, file := range [...]string{
+		templateConfirmation: `confirmation`,
+		templateCreation:     `creation`,
+		templateInvitation:   `invitation`,
+		templateMessage:      `broadcast`,
+	} {
+		templates[index].html, parseError = htmlTemplate.ParseFiles(path.Join(htmlBase, file))
 		if parseError != nil {
 			break
 		}
 
-		_, parseError = mail.text.ParseFiles(path.Join(textBase, mails[index]))
+		templates[index].text, parseError = textTemplate.ParseFiles(path.Join(textBase, file))
 		if parseError != nil {
 			break
 		}
 	}
 
-	return mail, parseError
+	return Mail{templates}, parseError
 }
 
-func (context Mail) send(host string, to mail.Address, template string, data interface{}) (returning error) {
-	const boundary = `Copyright(C)2017Kagucho.LicensedUnderAGPL-3.0.`
+func (context Mail) send(host string, recipients []string, toGroup string, tos []mail.Address, subject string, template templateID, data interface{}) (returning error) {
+	const boundary = `Copyright(C)2017Kagucho.`
 
-	cmd := exec.Command("sendmail", "-t")
+	cmd := exec.Command(`sendmail`, strings.Join(recipients, `,`))
 
 	pipe, pipeError := cmd.StdinPipe()
 	if pipeError != nil {
 		return pipeError
 	}
 
-	startError := cmd.Start()
-	if startError != nil {
+	if startError := cmd.Start(); startError != nil {
 		return startError
 	}
 
@@ -117,24 +125,41 @@ func (context Mail) send(host string, to mail.Address, template string, data int
 			if recoveredError, ok := recovered.(error); ok {
 				returning = recoveredError
 			} else {
-				returning = errors.New(fmt.Sprint(recovered))
+				panic(recovered)
 			}
 		}
 	}()
 
 	for _, data := range [...]string{
 		"Date: ", time.Now().Format(time.RFC1123),
-		"\r\nFrom: ", (&mail.Address{`TsuboneSystem`, `noreply-kagucho@` + host}).String(),
-		"\r\nTo: ", to.String(),
-		"\r\nSubject: ", mime.QEncoding.Encode(`UTF-8`, `TsuboneSystem 登録手続き`),
-		"\r\n" + contentType + ": multipart/alternative; boundary=" + boundary +
-		"\r\nMIME-Version: 1.0" +
-		"\r\n" +
-		"\r\n",
+		lineEnding + "From: ", (&mail.Address{`TsuboneSystem`, `noreply-kagucho@` + host}).String(),
+		lineEnding,
 	} {
 		if _, writeError := pipe.Write([]byte(data)); writeError != nil {
 			panic(writeError)
 		}
+	}
+
+	if writeError := writeTo(pipe, toGroup, tos); writeError != nil {
+		panic(writeError)
+	}
+
+	if subject != `` {
+		if _, writeError := pipe.Write([]byte(lineEnding)); writeError != nil {
+			panic(writeError)
+		}
+
+		if writeError := writeSubject(pipe, subject); writeError != nil {
+			panic(writeError)
+		}
+	}
+
+	if _, writeError := pipe.Write([]byte(
+		lineEnding +
+		contentType + ": multipart/alternative; boundary=" + boundary + lineEnding +
+		"MIME-Version: 1.0" + lineEnding +
+		lineEnding)); writeError != nil {
+		panic(writeError)
 	}
 
 	multipartWriter := multipart.NewWriter(pipe)
@@ -150,7 +175,7 @@ func (context Mail) send(host string, to mail.Address, template string, data int
 	}
 
 	textEncoding := quotedprintable.NewWriter(textPart)
-	textExecuteError := context.text.ExecuteTemplate(textEncoding, template, data)
+	textExecuteError := context.templates[template].text.Execute(textEncoding, data)
 
 	if closeError := textEncoding.Close(); closeError != nil {
 		panic(closeError)
@@ -166,7 +191,7 @@ func (context Mail) send(host string, to mail.Address, template string, data int
 	}
 
 	htmlEncoding := quotedprintable.NewWriter(htmlPart)
-	htmlExecuteError := context.html.ExecuteTemplate(htmlEncoding, template, data)
+	htmlExecuteError := context.templates[template].html.Execute(htmlEncoding, data)
 
 	if closeError := htmlEncoding.Close(); closeError != nil {
 		panic(closeError)

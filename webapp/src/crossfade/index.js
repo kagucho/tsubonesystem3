@@ -9,7 +9,7 @@
 
 /**
 	module:crossfade is a class which implements crossfade animation.
-	@extends external:ES.Object
+	@extends Object
 */
 export default class {
 	/**
@@ -23,7 +23,7 @@ export default class {
 
 	/**
 		start starts crossfade animation.
-		@returns {external:ES~Undefined}
+		@returns {Undefined}
 	*/
 	start() {
 		let next = 0;
@@ -60,7 +60,7 @@ export default class {
 
 	/**
 		stop stops crossfade animation.
-		@returns {external:ES~Undefined}
+		@returns {Undefined}
 	*/
 	stop() {
 		clearInterval(this.interval);

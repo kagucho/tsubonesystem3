@@ -27,7 +27,7 @@ import (
 	"github.com/kardianos/osext"
 	"log"
 	"net/http"
-	"path"
+	"path/filepath"
 )
 
 type Backend struct {
@@ -43,10 +43,15 @@ func init() {
 		log.Panic(executableError)
 	}
 
-	share = path.Join(executable, `../share/tsubonesystem3`)
+	share = filepath.Join(executable, `../share/tsubonesystem3`)
 }
 
 func New() (Backend, error) {
+	log.Print("TsuboneSystem3  Copyright (C) 2017  Kagucho <kagucho.net@gmail.com>")
+	log.Print("This program comes with ABSOLUTELY NO WARRANTY.")
+	log.Print("This is free software, and you are welcome to redistribute it")
+	log.Print("under certain conditions; see `/license' for details.")
+
 	fileError, fileErrorError := file.NewError(share)
 	if fileErrorError != nil {
 		return Backend{}, fileErrorError

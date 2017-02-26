@@ -9,7 +9,7 @@
 
 /**
 	module:private/large returns wether the display area is large.
-	@returns {external:ES.Boolean} - The boolean showing whether the
+	@returns {!Boolean} - The boolean showing whether the
 	display area is large or not.
 */
 export default function() {

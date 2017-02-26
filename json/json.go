@@ -15,31 +15,35 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// Package chanjson implements a JSON Marshaler for channels.
-package chanjson
+// Package json implements a JSON Marshaler for various types.
+package json
 
 import (
 	"bytes"
 	"encoding/json"
 	"reflect"
+	"strconv"
+	"time"
 )
 
-// ChanJSON is a structure which holds the context of the JSON Marshaler.
-type ChanJSON struct {
-	wrapped reflect.Value
-}
+// MarshalChan returns an array of JSON marshaled from the given channel or an
+// error.
+func MarshalChan(arrayChan interface{}) ([]byte, error) {
+	valueChan := reflect.ValueOf(arrayChan)
 
-// New returns a new chanjson.ChanJSON
-func New(wrapped interface{}) ChanJSON {
-	return ChanJSON{reflect.ValueOf(wrapped)}
-}
+	defer func() {
+		for {
+			_, present := valueChan.Recv()
+			if !present {
+				break
+			}
+		}
+	}()
 
-// MarshalJSON returns an array of JSON marshaled from the channel or an error.
-func (chanJSON ChanJSON) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBuffer(make([]byte, 0, 2))
 	buffer.WriteByte('[')
 
-	recieved, present := chanJSON.wrapped.Recv()
+	recieved, present := valueChan.Recv()
 	if !present {
 		buffer.WriteByte(']')
 	} else {
@@ -55,7 +59,7 @@ func (chanJSON ChanJSON) MarshalJSON() ([]byte, error) {
 				return nil, encodeError
 			}
 
-			recieved, present = chanJSON.wrapped.Recv()
+			recieved, present = valueChan.Recv()
 			if !present {
 				break
 			}
@@ -69,4 +73,8 @@ func (chanJSON ChanJSON) MarshalJSON() ([]byte, error) {
 	}
 
 	return buffer.Bytes(), nil
+}
+
+func MarshalTime(time time.Time) ([]byte, error) {
+	return strconv.AppendInt(nil, time.Unix(), 10), nil
 }

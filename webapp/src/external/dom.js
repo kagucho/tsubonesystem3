@@ -15,7 +15,7 @@
 /**
 	Interface Event.
 	@interface external:DOM~Event
-	@extends external:ES.Object
+	@extends Object
 	@see {@link https://dom.spec.whatwg.org/#event|
 		DOM Standard 2.2. Interface Event}
 */
@@ -23,7 +23,7 @@
 /**
 	Interface Element.
 	@interface external:DOM~Element
-	@extends external:ES.Object
+	@extends Object
 	@see {@link https://dom.spec.whatwg.org/#interface-element|
 		DOM Standard 3.9. Interface Element}
 */
@@ -34,4 +34,20 @@
 	@extends external:DOM~Element
 	@see {@link https://html.spec.whatwg.org/multipage/dom.html#htmlelement|
 		HTML Standard 3.2.2 Elements in the DOM}
+*/
+
+/**
+	Interface HTMLInputElement.
+	@interface external:DOM~HTMLInputElement
+	@extends external:DOM~HTMLElement
+	@see {@link https://html.spec.whatwg.org/multipage/forms.html#htmlinputelement|
+		HTML Standard 4.10.5 The input element}
+*/
+
+/**
+	Interface HTMLFormElement.
+	@interface external:DOM~HTMLFormElement
+	@extends external:DOM~HTMLElement
+	@see {@link https://html.spec.whatwg.org/multipage/forms.html#htmlformelement|
+		HTML Standard 4.10.3 The form element}
 */

@@ -29,3 +29,8 @@ func ListServeHTTP(writer http.ResponseWriter, request *http.Request,
 	context context.Context, claim authorizer.Claim) {
 	common.ServeJSON(writer, context.DB.QueryMembers(), http.StatusOK)
 }
+
+func ListrolesServeHTTP(writer http.ResponseWriter, request *http.Request,
+	context context.Context, claim authorizer.Claim) {
+	common.ServeJSON(writer, context.DB.QueryMemberRoles(), http.StatusOK)
+}

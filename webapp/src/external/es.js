@@ -7,17 +7,8 @@
 */
 
 /**
-	ECMAScript is the language embedded in web browsers.
-	@external ES
-	@see {@link
-		http://www.ecma-international.org/ecma-262/7.0/index.html|
-		ECMAScript® 2016 Language Specification}
-*/
-
-/**
-	The type whose sole value is the undefined value.
-	@interface external:ES~Undefined
-	@extends external:ES.Object
+	Undefined is the type whose sole value is the undefined value.
+	@interface Undefined
 	@see {@link
 		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-terms-and-definitions-undefined-type|
 		ECMAScript® 2016 Language Specification
@@ -25,9 +16,9 @@
 */
 
 /**
-	The type consisting of the primitive values true and false.
-	@class external:ES.Boolean
-	@extends external:ES.Object
+	Boolean is the type consisting of the primitive values true and false.
+	@class Boolean
+	@extends Object
 	@see {@link
 		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-terms-and-definitions-boolean-type|
 		ECMAScript® 2016 Language Specification
@@ -35,19 +26,9 @@
 */
 
 /**
-	The set of all possible Number values including the special
-	“Not-a-Number” (NaN) value, positive infinity, and negative infinity.
-	@class external:ES.Number
-	@see {@link
-		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-terms-and-definitions-number-type|
-		ECMAScript® 2016 Language Specification
-		4.3.21 Number type}
-*/
-
-/**
-	The set of all possible String values.
-	@class external:ES.String
-	@extends external:ES.Object
+	String is the set of all possible String values.
+	@class String
+	@extends Object
 	@see {@link
 		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-terms-and-definitions-string-type|
 		ECMAScript® 2016 Language Specification
@@ -55,8 +36,30 @@
 */
 
 /**
+	The set of all possible Number values including the special
+	“Not-a-Number” (NaN) value, positive infinity, and negative infinity.
+	@class Number
+	@extends Object
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-terms-and-definitions-number-type|
+		ECMAScript® 2016 Language Specification
+		4.3.21 Number type}
+*/
+
+/**
+	function is a member of the Object type that may be invoked as a
+	subroutine.
+	@interface function
+	@extends Object
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-terms-and-definitions-function|
+		ECMAScript® 2016 Language Specification
+		4.3.28 function}
+*/
+
+/**
 	Object object.
-	@class external:ES.Object
+	@class Object
 	@see {@link
 		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-object-objects|
 		ECMAScript® 2016 Language Specification
@@ -64,10 +67,19 @@
 */
 
 /**
-	WeakMap objects are collections of key/value pairs where the keys are objects
-	and values may be arbitrary ECMAScript language values.
-	@class external:ES.WeakMap
-	@extends external:ES.Object
+	Array object.
+	@class Array
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-array-objects|
+		ECMAScript® 2016 Language Specification
+		22.1 Array Objects}
+*/
+
+/**
+	WeakMap object is a collection of key/value pairs where the keys are
+	objects and values may be arbitrary ECMAScript language values.
+	@class WeakMap
+	@extends Object
 	@see {@link
 		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-weakmap-objects|
 		ECMAScript® 2016 Language Specification
@@ -75,10 +87,20 @@
 */
 
 /**
-	The Iterable interface includes @@iterator property.
-	@interface external:ES~Iterable
+	Iterable is an interface including @@iterator property.
+	@interface Iterable
 	@see {@link
 		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-iterable-interface|
 		ECMAScript® 2016 Language Specification
 		25.1.1.1 The Iterable Interface}
+*/
+
+/**
+	Iterator is an interface including some required and optional
+	properties.
+	@interface Iterator
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-iterator-interface|
+		ECMAScript® 2016 Language Specification
+		25.1.1.2 The Iterator Interface}
 */

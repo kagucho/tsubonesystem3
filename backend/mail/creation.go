@@ -32,8 +32,9 @@ func (context Mail) SendCreation(host string, address mail.Address, id, token st
 	data.Base = constructing.String()
 
 	constructing.Path = `/private`
-	constructing.Fragment = `!member?id=` + id + `&token=` + token
+	constructing.Fragment = `!member?id=` + id + `&fill=` + token
 	data.Register = constructing.String()
 
-	return context.send(host, address, `creation`, data)
+	return context.send(host, []string{`-t`}, ``, []mail.Address{address},
+		`TsuboneSystem 登録手続き`, templateCreation, data)
 }

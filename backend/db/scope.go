@@ -18,7 +18,6 @@
 package db
 
 import (
-	"crypto/hmac"
 	"database/sql"
 	"github.com/kagucho/tsubonesystem3/backend/scope"
 	"log"
@@ -31,15 +30,10 @@ func (db DB) GetScope(user string, password string) (scope.Scope, error) {
 	var result scope.Scope
 	var id uint16
 
-	passwordValid, passwordError := func() (bool, error) {
-		hashedPassword, hashError := hashPassword(password)
-		if hashError != nil {
-			return false, hashError
-		}
-
+	if passwordError := func() error {
 		rows, queryError := db.stmts[stmtSelectMemberIDPassword].Query(user)
 		if queryError != nil {
-			return false, queryError
+			return queryError
 		}
 
 		defer func() {
@@ -52,19 +46,28 @@ func (db DB) GetScope(user string, password string) (scope.Scope, error) {
 
 		var dbPassword sql.RawBytes
 		if scanError := rows.Scan(&id, &dbPassword); scanError != nil {
-			return false, sql.ErrNoRows
+			return IncorrectIdentity
 		}
 
-		return hmac.Equal(dbPassword, hashedPassword), nil
-	}()
+		return verifyPassword(password, dbPassword)
+	}(); passwordError != nil {
+		return result, passwordError
+	}
 
-	if passwordValid {
+	result = result.Set(scope.User).Set(scope.Member)
+
+	rows, queryError := db.stmts[stmtSelectOfficerScopeByInternalMember].Query(id)
+	if queryError != nil {
+		return result, queryError
+	}
+
+	for rows.Next() {
 		var dbScope string
-		if scanError := db.stmts[stmtSelectOfficerScopeInternal].QueryRow(id).Scan(&dbScope); scanError != nil {
-			return scope.Scope{}, scanError
+
+		if scanError := rows.Scan(&dbScope); scanError != nil {
+			return result, scanError
 		}
 
-		result = result.Set(scope.Basic)
 		for _, flag := range strings.Split(dbScope, `,`) {
 			switch flag {
 			case `management`:
@@ -76,31 +79,5 @@ func (db DB) GetScope(user string, password string) (scope.Scope, error) {
 		}
 	}
 
-	return result, passwordError
-}
-
-func (db DB) QueryTemporary(id string) (bool, error) {
-	rows, queryError := db.stmts[stmtSelectMemberPassword].Query(id)
-	if queryError != nil {
-		return false, queryError
-	}
-
-	defer func() {
-		if closeError := rows.Close(); closeError != nil {
-			log.Print(closeError)
-		}
-	}()
-
-	var dbPassword sql.RawBytes
-	if scanError := rows.Scan(&dbPassword); scanError != nil {
-		return false, scanError
-	}
-
-	for _, value := range dbPassword {
-		if value != 0 {
-			return false, nil
-		}
-	}
-
-	return true, nil
+	return result, nil
 }

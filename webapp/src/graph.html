@@ -26,15 +26,7 @@
 		{{range .Properties}}
 		<meta content={{.Content}} property={{.Property}}>
 		{{end}}
-		<title>神楽坂一丁目通信局 - URIが違います</title>
-	</head>
-	<body>
-		<h1 class="text-nowrap">神楽坂一丁目通信局</h1>
-		<h2>URIが違います</h2>
-		<p>あなたが行きたいのはもしかして <a href={{.URL}}>{{.URL}}</a> ?</p>
-		${require("./footer.html")}
-		<script>location.replace({{.URL}});</script>
-		<script crossorigin="anonymous"
+		<script crossorigin="anonymous" defer
 			integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7"
 			src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js">
 		</script>
@@ -42,5 +34,17 @@
 			integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
 			src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js">
 		</script>
+		<title>神楽坂一丁目通信局 - URIが違います</title>
+	</head>
+	<body>
+		<header><h1 class="text-nowrap">神楽坂一丁目通信局</h1></header>
+		<main>
+			<article>
+				<h2>URIが違います</h2>
+				<p>あなたが行きたいのはもしかして <a href={{.URL}}>{{.URL}}</a> ?</p>
+			</article>
+		</main>
+		${require("./footer.html")}
+		<script>location.replace({{.URL}});</script>
 	</body>
 </html>

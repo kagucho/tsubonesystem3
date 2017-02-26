@@ -20,26 +20,35 @@ package private
 
 import (
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/club"
+	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/mail"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/member"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/officer"
+	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/party"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/token/authorizer"
+	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/user"
 	"github.com/kagucho/tsubonesystem3/backend/scope"
 )
 
 var routes = map[string]authorizer.Route{
-	`/club/detail`:           {club.DetailServeHTTP, scope.Basic},
-	`/club/list`:             {club.ListServeHTTP, scope.Basic},
-	`/club/listname`:         {club.ListNameServeHTTP, scope.Basic},
-	`/member/confirm`:        {member.ConfirmServeHTTP, scope.Basic},
-	`/member/create`:         {member.CreateServeHTTP, scope.Basic},
-	`/member/declareob`:      {member.DeclareOBServeHTTP, scope.Basic},
-	`/member/delete`:         {member.DeleteServeHTTP, scope.Management},
-	`/member/detail`:         {member.DetailServeHTTP, scope.Basic},
-	`/member/list`:           {member.ListServeHTTP, scope.Basic},
-	`/member/update`:         {member.UpdateServeHTTP, scope.Basic},
-	`/member/updatepassword`: {member.UpdatePasswordServeHTTP, scope.Basic},
-	`/officer/detail`:        {officer.DetailServeHTTP, scope.Basic},
-	`/officer/list`:          {officer.ListServeHTTP, scope.Basic},
+	`/club/detail`:         {club.DetailServeHTTP, scope.Member},
+	`/club/list`:           {club.ListServeHTTP, scope.Member},
+	`/mail`:                {mail.ServeHTTP, scope.Member},
+	`/member/create`:       {member.CreateServeHTTP, scope.Management},
+	`/member/delete`:       {member.DeleteServeHTTP, scope.Management},
+	`/member/detail`:       {member.DetailServeHTTP, scope.Member},
+	`/member/list`:         {member.ListServeHTTP, scope.Member},
+	`/member/listroles`:    {member.ListrolesServeHTTP, scope.Member},
+	`/officer/detail`:      {officer.DetailServeHTTP, scope.Member},
+	`/officer/list`:        {officer.ListServeHTTP, scope.Member},
+	`/party/create`:        {party.CreateServeHTTP, scope.Member},
+	`/party/list`:          {party.ListServeHTTP, scope.Member},
+	`/party/listnames`:     {party.ListnamesServeHTTP, scope.Member},
+	`/party/respond`:       {party.RespondServeHTTP, scope.Member},
+	`/user/confirm`:        {user.ConfirmServeHTTP, scope.User},
+	`/user/declareob`:      {user.DeclareOBServeHTTP, scope.User},
+	`/user/detail`:         {user.DetailServeHTTP, scope.User},
+	`/user/update`:         {user.UpdateServeHTTP, scope.User},
+	`/user/updatepassword`: {user.UpdatePasswordServeHTTP, scope.User},
 }
 
 // GetRoute returns route to the given path.

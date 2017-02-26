@@ -18,15 +18,32 @@
 package db
 
 import (
-	"github.com/kagucho/tsubonesystem3/chanjson"
+	"database/sql"
+	"github.com/kagucho/tsubonesystem3/json"
 	"strings"
 )
 
-// Officer is a structure to hold the information about an officer
-type Officer struct {
+type OfficerCommon struct {
 	Member OfficerMember `json:"member"`
 	Name   string        `json:"name"`
-	Scope  []string      `json:"scope"`
+}
+
+// OfficerDetail is a structure to hold the information about an officer
+type OfficerDetail struct {
+	OfficerCommon
+	Scope []string `json:"scope"`
+}
+
+type OfficerEntry struct {
+	OfficerCommon
+	ID string `json:"id"`
+}
+
+type OfficerEntryChan <-chan OfficerEntryResult
+
+type OfficerEntryResult struct {
+	Error error
+	Value OfficerEntry
 }
 
 // OfficerMember is a structure to hold the information about a member who is
@@ -39,32 +56,25 @@ type OfficerMember struct {
 	Tel      string `json:"tel,omitempty"`
 }
 
-type officer struct {
-	ID     string        `json:"id"`
-	Member OfficerMember `json:"member"`
-	Name   string        `json:"name"`
+func (entryChan OfficerEntryChan) MarshalJSON() ([]byte, error) {
+	return json.MarshalChan(entryChan)
 }
 
-type officerResult struct {
-	Error error
-	Value officer
-}
-
-// QueryOfficer returns db.Officer of the officer identified with the given ID.
-func (db DB) QueryOfficer(id string) (Officer, error) {
-	var detail Officer
-	var member uint16
+// QueryOfficerDetail returns db.OfficerDetail of the officer identified with
+// the given ID.
+func (db DB) QueryOfficerDetail(id string) (OfficerDetail, error) {
+	var detail OfficerDetail
 	var scope string
 
-	if scanError := db.stmts[stmtSelectOfficer].QueryRow(id).Scan(&member, &detail.Name, &scope); scanError != nil {
-		return Officer{}, scanError
-	}
-
-	if scanError := db.stmts[stmtSelectOfficerMemberInternal].QueryRow(member).Scan(
+	scanError := db.stmts[stmtSelectOfficer].QueryRow(id).Scan(
+		&detail.Name, &scope,
 		&detail.Member.ID, &detail.Member.Mail,
 		&detail.Member.Nickname, &detail.Member.Realname,
-		&detail.Member.Tel); scanError != nil {
-		return Officer{}, scanError
+		&detail.Member.Tel)
+	if scanError == sql.ErrNoRows {
+		return detail, IncorrectIdentity
+	} else if scanError != nil {
+		return detail, scanError
 	}
 
 	detail.Scope = strings.Split(scope, `,`)
@@ -77,36 +87,32 @@ func (db DB) QueryOfficer(id string) (Officer, error) {
 func (db DB) QueryOfficerName(id string) (string, error) {
 	var name string
 	scanError := db.stmts[stmtSelectOfficerName].QueryRow(id).Scan(&name)
+	if scanError == sql.ErrNoRows {
+		scanError = IncorrectIdentity
+	}
 
 	return name, scanError
 }
 
-// QueryOfficers returns chanjson.ChanJSON which represents all the officers.
-func (db DB) QueryOfficers() chanjson.ChanJSON {
-	resultChan := make(chan officerResult)
+// QueryOfficers returns db.OfficerEntryChan which represents all the officers.
+func (db DB) QueryOfficers() OfficerEntryChan {
+	resultChan := make(chan OfficerEntryResult)
 
 	go func() {
 		defer close(resultChan)
 
 		rows, queryError := db.stmts[stmtSelectOfficers].Query()
 		if queryError != nil {
-			resultChan <- officerResult{Error: queryError}
+			resultChan <- OfficerEntryResult{Error: queryError}
 			return
 		}
 
 		defer rows.Close()
 
 		for rows.Next() {
-			var member uint16
-			var result officerResult
+			var result OfficerEntryResult
 
-			result.Error = rows.Scan(&result.Value.ID, &member, &result.Value.Name)
-			if result.Error != nil {
-				resultChan <- result
-				return
-			}
-
-			result.Error = db.stmts[stmtSelectOfficerMemberInternal].QueryRow(member).Scan(
+			result.Error = rows.Scan(&result.Value.ID, &result.Value.Name,
 				&result.Value.Member.ID,
 				&result.Value.Member.Mail,
 				&result.Value.Member.Nickname,
@@ -121,5 +127,5 @@ func (db DB) QueryOfficers() chanjson.ChanJSON {
 		}
 	}()
 
-	return chanjson.New(resultChan)
+	return resultChan
 }

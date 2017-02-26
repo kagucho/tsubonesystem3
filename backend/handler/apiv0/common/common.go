@@ -20,9 +20,7 @@ package common
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
-	"runtime/debug"
 )
 
 // Error is a structure to hold an error to serve.
@@ -62,15 +60,6 @@ var statusError = map[int]struct {
 	},
 }
 
-// Recover recovers, logs, and serves Internal Server Error.
-func Recover(writer http.ResponseWriter) {
-	if recovered := recover(); recovered != nil {
-		log.Println(recovered)
-		debug.PrintStack()
-		ServeErrorDefault(writer, http.StatusInternalServerError)
-	}
-}
-
 // ErrorEncode encodes the error to a string conforming to
 // RFC 6749 - The OAuth 2.0 Authorization Framework 5.2.  Error Response
 // https://tools.ietf.org/html/rfc6749#section-5.2
@@ -98,39 +87,37 @@ func ErrorEncode(decoded string) string {
 // Authorization Framework 5.2.  Error Response.
 // https://tools.ietf.org/html/rfc6749#section-4.2.2.1
 func ServeError(writer http.ResponseWriter, response Error, code int) {
-	success := func() bool {
-		defer Recover(writer)
-
-		if response.ID == `` {
-			response.ID = statusError[code].id
-		} else {
-			response.ID = ErrorEncode(response.ID)
-		}
-
-		if response.Description == `` {
-			response.Description = http.StatusText(code)
-		} else {
-			response.Description = ErrorEncode(response.Description)
-		}
-
-		if response.URI == `` {
-			response.URI = statusError[code].uri
-		} else {
-			response.URI = ErrorEncode(response.URI)
-		}
-
-		return true
-	}()
-
-	if success {
-		ServeJSON(writer, response, code)
+	if response.ID == `` {
+		response.ID = statusError[code].id
+	} else {
+		response.ID = ErrorEncode(response.ID)
 	}
+
+	if response.Description == `` {
+		response.Description = http.StatusText(code)
+	} else {
+		response.Description = ErrorEncode(response.Description)
+	}
+
+	if response.URI == `` {
+		response.URI = statusError[code].uri
+	} else {
+		response.URI = ErrorEncode(response.URI)
+	}
+
+	ServeJSON(writer, response, code)
 }
 
 // ServeErrorDefault serves an error with the given status code and the default
 // messages for the code.
 func ServeErrorDefault(writer http.ResponseWriter, code int) {
 	ServeError(writer, Error{}, code)
+}
+
+func ServeMailError(writer http.ResponseWriter) {
+	ServeError(writer,
+		Error{ID: `mail_failure`, Description: `failed to mail`},
+		http.StatusOK)
 }
 
 // ServeJSON writes given data in JSON.

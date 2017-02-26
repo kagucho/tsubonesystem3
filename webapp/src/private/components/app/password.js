@@ -1,6 +1,5 @@
 /**
-	@file password.js implements the component of the password updating
-	page.
+	@file password.js implements password component.
 	@author Akihiko Odaki <akihiko.odaki.4i@stu.hosei.ac.jp>
 	@copyright 2017  {@link https://kagucho.net/|Kagucho}
 	@license AGPL-3.0+
@@ -9,131 +8,86 @@
 /** @module private/components/app/password */
 
 /**
-	module:private/components/app/password is a component to provide the
-	feature to update the password of the user.
+	module:private/components/app/password is a component to update the
+	password of the user.
 	@name module:private/components/app/password
-	@type external:Mithril~Component
+	@type !external:Mithril~Component
 */
 
+import * as alert from "../alert";
 import * as container from "../container";
+import * as modal from "../../modal";
 import * as primitive from "../password/primitive";
 import * as progress from "../progress";
 
-export function controller() {
-	const control = {state: {}};
+/**
+	registerLoading registers a loading.
+	@private
+	@param {!external:jQuery~Promise} promise - A promise describing the
+	loading.
+	@returns {Undefined}
+*/
+function registerLoading(promise) {
+	this.message = {
+		attrs: {value: 0},
+		type:  "inprogress",
+	};
 
-	control.primitive = new primitive.controller((function(promise) {
-		this.state = {
-			attributes: {value: 0},
-			type:       "inprogress",
-		};
+	const inprogress = modal.unshift(
+		alert.inprogress(primitive.inprogress));
 
-		promise.then(() => {
-			this.state = {type: "success"};
-		}, message => {
-			this.state = {type: "error", message};
-		}, event => {
-			this.state.attributes = {
-				max:   event.total,
-				value: event.loaded,
-			};
-		});
-	}).bind(control));
+	promise.then(submission => {
+		inprogress.remove();
 
-	return control;
+		modal.unshift((submission ? alert.leavable : alert.closable)(
+			m("span", {"aria-hidden": "true"},
+				m("span", {className: "glyphicon glyphicon-ok"}),
+				" "
+			), primitive.success
+		));
+	}, xhr => {
+		inprogress.remove();
+
+		modal.unshift(alert.closable(
+			m("span", {"aria-hidden": "true"},
+				m("span", {className: "glyphicon glyphicon-exclamation-sign"}),
+				" "
+			), primitive.error(xhr)
+		));
+	}, event => this.progress = {
+		max:   event.total,
+		value: event.loaded,
+	});
 }
 
-export function view(control) {
-	let alertView;
+export function oninit() {
+	this.primitive = primitive.newState();
+	this.primitive.setOnloadstart(registerLoading.bind(this));
+}
 
-	switch (control.state.type) {
-	case "error":
-		alertView = m("div", {
-			className: "alert alert-danger",
-			role:      "alert",
-			style:     {
-				display:   "inline-block",
-				textAlign: "left",
-			},
-		}, primitive.errorView(control.state.message));
-		break;
-
-	case "inprogress":
-		alertView = m("div", {
-			className: "alert alert-info",
-			role:      "alert",
-			style:     {
-				display:   "inline-block",
-				textAlign: "left",
-			},
-		}, primitive.inprogressView);
-		break;
-
-	default:
-		throw new Error("unknown type: "+control.state.type);
-	}
-
+export function view() {
 	return [
-		control.state.type == "inprogress" ? m(progress, control.state.attributes) : null,
+		this.progress && m(progress, this.progress),
 		m(container,
 			m("div", {className: "container", style: {textAlign: "center"}},
 				m("form", {
-					ariaLabelledby: "component-app-password-title",
-					style:          {
+					"aria-labelledby": "component-app-password-title",
+					style:             {
 						display:   "inline-block",
 						textAlign: "left",
 					},
 				},
-					m("div", {
-						ariaHidden: (!alertView).toString(),
-						style:      {
-							minHeight: "8rem",
-							textAlign: "center",
-						},
-					}, alertView),
 					m("h1", {id: "component-app-password-title"},
-						primitive.titleView),
-					primitive.bodyView(control.primitive),
-					m("div", {style: {textAlign: "center"}},
-						primitive.buttonView(control.primitive))
-				)
-			),
-			control.state.type == "success" ? m("div", {
-				className: "modal fade",
-
-				config(element, initialized, context) {
-					const jquery = $(element);
-
-					if (!initialized) {
-						context.onunload = jquery.modal.bind(jquery, "hide");
-
-						jquery.on("hidden.bs.modal",
-							history.length ?
-								history.back.bind(history) :
-								() => m.route(""));
-					}
-
-					jquery.modal("show");
-				},
-
-				role:     "dialog",
-				tabindex: "-1",
-			}, m("div", {className: "modal-dialog", role: "document"},
-				m("div", {className: "modal-content"},
-					m("div", {className: "modal-body"},
-						primitive.successView),
-					m("div", {className: "modal-footer"},
-						history.length ? m("button", {
-							className:      "btn btn-default",
-							type:           "button",
-							"data-dismiss": "modal",
-						}, "戻る") : m("a", {
-							className: "btn btn-default",
-							href:      "#",
-						}, "トップページへ")
+						primitive.title
+					), m(this.primitive.body, {
+						autofocus: true,
+						oncreate:  () => setTimeout(
+							this.primitive.focus.bind(this.primitive)),
+					}), m("div", {style: {textAlign: "center"}},
+						m(this.primitive.button)
 					)
 				)
-			)) : null
+			)
 		),
 	];
 }

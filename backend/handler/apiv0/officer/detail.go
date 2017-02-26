@@ -18,10 +18,11 @@
 package officer
 
 import (
-	"database/sql"
+	"github.com/kagucho/tsubonesystem3/backend/db"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/common"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/context"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/token/authorizer"
+	"github.com/kagucho/tsubonesystem3/backend/mail"
 	"net/http"
 )
 
@@ -29,32 +30,26 @@ import (
 // HTTP.
 func DetailServeHTTP(writer http.ResponseWriter, request *http.Request,
 	context context.Context, claim authorizer.Claim) {
-	serve := func() func() {
-		defer common.Recover(writer)
-
-		id := request.FormValue(`id`)
-		officer, queryError := context.DB.QueryOfficer(id)
-		switch queryError {
-		case nil:
-			return func() {
-				common.ServeJSON(writer, officer, http.StatusOK)
-			}
-
-		case sql.ErrNoRows:
-			return func() {
-				common.ServeError(writer,
-					common.Error{
-						ID:          `invalid_id`,
-						Description: `invalid ID`,
-					}, http.StatusBadRequest)
-			}
-
-		default:
-			panic(queryError)
+	id := request.FormValue(`id`)
+	officer, queryError := context.DB.QueryOfficerDetail(id)
+	switch queryError {
+	case nil:
+		var mailError error
+		officer.Member.Mail, mailError = mail.AddressToUnicode(officer.Member.Mail)
+		if mailError != nil {
+			panic(mailError)
 		}
-	}()
 
-	if serve != nil {
-		serve()
+		common.ServeJSON(writer, officer, http.StatusOK)
+
+	case db.IncorrectIdentity:
+		common.ServeError(writer,
+			common.Error{
+				ID:          `invalid_id`,
+				Description: `invalid ID`,
+			}, http.StatusBadRequest)
+
+	default:
+		panic(queryError)
 	}
 }

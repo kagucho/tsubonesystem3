@@ -21,6 +21,7 @@ module.exports = {
 			config: {
 				extends: "stylelint-config-standard",
 				rules:   {
+					"declaration-colon-space-after":     null,
 					"indentation":                       "tab",
 					"number-leading-zero":               "never",
 					"selector-list-comma-newline-after": "never-multi-line",

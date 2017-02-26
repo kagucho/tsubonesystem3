@@ -1,0 +1,7 @@
+From: {{.From}}
+
+{{.Body}}
+
+////////////////////////////////
+TsuboneSystem
+{{.Base}}/private

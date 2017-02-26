@@ -22,19 +22,9 @@
 			href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"
 			integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
 			rel="stylesheet">
+		<link href="/error.css" rel="stylesheet">
 		<link href="/footer.css" rel="stylesheet">
-		<title>神楽坂一丁目通信局 - URLが長すぎます</title>
-	</head>
-	<body>
-		<img alt="ロゴ" class="hidden-xs" src="../images/logo250c_black.png" />
-		<h1>神楽坂一丁目通信局</h1>
-		<h2>URLが長すぎます</h2>
-		<h3>どういうこっちゃ</h3>
-		<p>アホみたいに長いURLが送られてきました。</p>
-		<h3>どうすればいい?</h3>
-		<p>もしこのサイトにあるリンクを開いてこの画面に来てしまったのなら、<a href="mailto:kagucho.net@gmail.com">kagucho.net@gmail.com</a>へ報告してください。お願いします。あなたの好意が世界を救います。</p>
-		${require("../footer.html")}
-		<script crossorigin="anonymous"
+		<script crossorigin="anonymous" defer
 			integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7"
 			src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js">
 		</script>
@@ -42,5 +32,27 @@
 			integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
 			src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js">
 		</script>
+		<title>神楽坂一丁目通信局 - URLが長すぎます</title>
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<img alt="ロゴ" class="hidden-xs"
+					src="../images/logo250c_black.png" />
+				<h1>神楽坂一丁目通信局</h1>
+			</header>
+			<main>
+				<article>
+					<h2>URLが長すぎます</h2>
+					<dl>
+						<dt>どういうこっちゃ</dt>
+						<dd>アホみたいに長いURLが送られてきました。</dd>
+						<dt>どうすればいい?</dt>
+						<dd>もしこのサイトにあるリンクを開いてこの画面に来てしまったのなら、<a href="mailto:kagucho.net@gmail.com">kagucho.net@gmail.com</a>へ報告してください。お願いします。あなたの好意が世界を救います。</dd>
+					</dl>
+				</article>
+			</main>
+		</div>
+		${require("../footer.html")}
 	</body>
 </html>

@@ -189,6 +189,6 @@ describe("module:client", () => {
 					}, this.skip.bind(this));
 				});
 			});
-		}).bind(test);
+		}.bind(test))();
 	}
 });

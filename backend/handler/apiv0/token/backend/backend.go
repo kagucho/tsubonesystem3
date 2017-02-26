@@ -37,7 +37,7 @@ type Backend struct {
 const accessTokenDuration = 2199023255552
 const refreshTokenDuration = 70368744177664
 const refreshDuration = accessTokenDuration * 2
-const temporaryDuration = 70368744177664
+const tmpDuration = 70368744177664
 
 // New returns a new backend.Backend.
 func New() (Backend, error) {
@@ -76,11 +76,11 @@ func RefreshRequiresRenew(claim jwt.Claim) bool {
 }
 
 func (backend Backend) IssueMail(sub string) (string, error) {
-	return backend.mail.Issue(sub, ``, temporaryDuration, false)
+	return backend.mail.Issue(sub, ``, tmpDuration, false)
 }
 
-func (backend Backend) IssueTemporaryAccessUpdater(sub string) (string, error) {
-	return backend.access.Issue(sub, `update`, temporaryDuration, true)
+func (backend Backend) IssueTmpUserAccess(sub string) (string, error) {
+	return backend.access.Issue(sub, `user`, tmpDuration, true)
 }
 
 func (backend Backend) IssueAccess(sub, scope string) (string, error) {

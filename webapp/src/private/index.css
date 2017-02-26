@@ -19,12 +19,8 @@
 	padding: 1rem;
 }
 
-.component-member-cell {
-	vertical-align: middle;
-}
-
-.component-member-data {
-	display: inline-block;
+.component-password-record {
+	margin: 1rem;
 }
 
 .form-control {
@@ -44,32 +40,31 @@
 	border: hidden;
 }
 
-@keyframes component-progress-animation {
-	from {
-		height: .2rem;
-	}
-
+@keyframes component-progress-hiding {
 	to {
-		height: 0;
+		transform:        scaleY(0);
+		transform-origin: top;
 	}
 }
 
 @media all and (max-width: 32rem) {
-	.component-app-members-cell, .component-member-cell {
+	.component-app-mail-cell, .component-app-members-cell {
 		display: block;
 	}
 }
 
 @media all and (min-width: 32rem) {
-	.component-app-members-cell {
+	.component-app-mail-cell, .component-app-members-cell {
 		display: table-cell;
 	}
+}
 
-	.component-member-data {
-		padding-top: 2rem;
-	}
-
+@media all and (min-width: 72ch) {
 	.component-password-record {
-		white-space: nowrap;
+		min-width: 64ch;
 	}
+}
+
+html, body, #container {
+	height: 100%;
 }

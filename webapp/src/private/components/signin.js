@@ -14,51 +14,42 @@
 	@type external:Mithril~Component
 */
 
-import * as client from "../client";
 import * as progress from "./progress";
+import client from "../client";
 
 /**
-	state holds the private state.
-	@type external:ES.WeakMap<external:jQuery.$.Deferred#promise, external:ES.Object>
+	signin signs in.
+	@private
+	@param {!external:DOM~HTMLFormElement} form - An element representing
+	the credentials of the user.
+	@returns {Undefined}
 */
-const state = new WeakMap;
+function signin(form) {
+	const clientSignin = client.signin(form.id.value, form.password.value);
 
-export function controller() {
-	const current = {
-		deferred: $.Deferred(),
-		id:       m.prop(""),
-		password: m.prop(""),
+	this.attrs.onloadstart(clientSignin);
 
-		signin() {
-			client.signin(this.id(), this.password()).then(
-			this.deferred.resolve.bind(this.deferred),
-			xhr => {
-				this.error = xhr.status == 400 ? "残念！！IDもしくはパスワードが違います。" : client.error(xhr);
-				delete this.progress;
-			}, event => {
-				this.progress = {
-					max:   event.total,
-					value: event.loaded,
-				};
-			});
+	clientSignin.progress(function(progressEvent) {
+		this.progress = {
+			max:   progressEvent.total,
+			value: progressEvent.loaded,
+		};
+	}.bind(this.state)).catch(function(xhr) {
+		this.error = xhr.responseJSON && xhr.responseJSON.error == "invalid_grant" ?
+			"残念！！IDもしくはパスワードが違います。" :
+			client.error(xhr);
 
-			this.progress = {value: 0};
-		},
-	};
+		delete this.progress;
+	}.bind(this.state));
 
-	const promise = current.deferred.promise();
-	state.set(promise, current);
-
-	return promise;
+	this.state.progress = {value: 0};
 }
 
-export function view(promise) {
-	const current = state.get(promise);
-
+export function view(node) {
 	const style = {fontSize: "2rem", height: "auto", marginTop: "2rem"};
 
 	return [
-		current.progress && m(progress, current.progress),
+		this.progress && m(progress, this.progress),
 		m("div", {
 			className: "jumbotron",
 			style:     {
@@ -70,42 +61,54 @@ export function view(promise) {
 			m("p", "TsuboneSystemは出欠席管理、メンバー管理、簡易メーリングリスト、非常時連絡先参照を目的に作られたシステムです。"),
 			m("p", {className: "hidden-xs"})
 		)), m("div", {className: "container"},
-			current.error && m("div", {
+			this.error && m("div", {
 				className: "alert alert-danger",
 				role:      "alert",
 			},
-				m("span", {ariaHidden: "true"},
+				m("span", {"aria-hidden": "true"},
 					m("span", {className: "glyphicon glyphicon-exclamation-sign"}),
 					" "
-				), current.error
-			),
-			m("div", {
-				ariaLabel: "Sign in",
-				className: "text-center",
-				role:      "dialog",
-				style:     {maxWidth: "40ch", margin: "0 auto"},
+				), this.error
+			), m("form", {
+				"aria-label": "Sign in",
+				className:    "text-center",
+				role:         "dialog",
+
+				onsubmit(event) {
+					signin.call(node, event.target);
+
+					return false;
+				},
+
+				style: {maxWidth: "40ch", margin: "0 auto"},
 			},
 				m("input", {
-					className:   "form-control",
-					maxlength:   "64",
-					oninput:     m.withAttr("value", current.id),
+					autocomplete: "username",
+					className:    "form-control",
+					inputmode:    "verbatim",
+					maxlength:    "64",
+					name:         "id",
+
+					oncreate(input) {
+						input.dom.focus();
+					},
+
 					placeholder: "ID",
 					style,
 				}), m("input", {
-					className:   "form-control",
-					maxlength:   "64",
-					oninput:     m.withAttr("value", current.password),
-					placeholder: "Password",
+					autocomplete: "current-password",
+					className:    "form-control",
+					inputmode:    "verbatim",
+					maxlength:    "128",
+					name:         "password",
+					placeholder:  "Password",
 					style,
-					type:        "password",
-				}), m("input", {
+					type:         "password",
+				}), m("button", {
 					className: "btn btn-lg btn-primary btn-block",
-					disabled:  current.progress != null,
-					onclick:   current.signin.bind(current),
+					disabled:  this.progress != null,
 					style,
-					type:      "button",
-					value:     "Sign in",
-				})
+				}, "Sign in")
 			)
 		),
 	];

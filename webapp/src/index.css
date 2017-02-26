@@ -65,6 +65,13 @@
 	background-image: url(./images/slides/all.jpg);
 }
 
+#caption {
+	margin: 0;
+	display: table-cell;
+	text-align: center;
+	vertical-align: middle;
+}
+
 #clubs {
 	background: none repeat scroll 0 0 #444;
 	color: #eee;
@@ -86,18 +93,11 @@
 	text-decoration: none;
 }
 
-#contact {
+footer {
 	background: none repeat scroll 0 0 rgba(0, 0, 0, .8);
 	border-top: .1rem solid #ccc;
 	color: #eee;
 	padding: 4rem 0;
-}
-
-#caption {
-	margin: 0;
-	display: table-cell;
-	text-align: center;
-	vertical-align: middle;
 }
 
 #top {

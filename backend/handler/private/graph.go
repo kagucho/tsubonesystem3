@@ -18,7 +18,6 @@
 package private
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/kagucho/tsubonesystem3/backend/db"
@@ -65,14 +64,14 @@ var graphFuncs = map[string]graphFunc{
 	`officer`: graphOfficer, `officers`: graphOfficers,
 }
 
-func graphClub(db db.DB, base string, routeQuery []string) graph {
+func graphClub(dbInstance db.DB, base string, routeQuery []string) graph {
 	var description string
 	var title string
 
 	id := parseQuery(routeQuery)[`id`]
-	name, queryError := db.QueryClubName(id)
+	name, queryError := dbInstance.QueryClubName(id)
 	switch queryError {
-	case sql.ErrNoRows:
+	case db.IncorrectIdentity:
 		description = `神楽坂一丁目通信局の不明な部門です。`
 		title = `TsuboneSystem 不明な部門です`
 
@@ -98,7 +97,7 @@ func graphClub(db db.DB, base string, routeQuery []string) graph {
 	}
 }
 
-func graphClubs(db db.DB, base string, routeQuery []string) graph {
+func graphClubs(dbInstance db.DB, base string, routeQuery []string) graph {
 	url := base + "#!clubs"
 
 	return graph{
@@ -113,13 +112,13 @@ func graphClubs(db db.DB, base string, routeQuery []string) graph {
 	}
 }
 
-func graphMember(db db.DB, base string, routeQuery []string) graph {
+func graphMember(dbInstance db.DB, base string, routeQuery []string) graph {
 	properties := make([]property, 0, 8)
 
 	id := parseQuery(routeQuery)[`id`]
-	memberGraph, queryError := db.QueryMemberGraph(id)
+	memberGraph, queryError := dbInstance.QueryMemberGraph(id)
 	switch queryError {
-	case sql.ErrNoRows:
+	case db.IncorrectIdentity:
 		properties = append(properties,
 			property{
 				`og:description`,
@@ -177,7 +176,7 @@ func graphMembers(dbInstance db.DB, base string, routeQuery []string) graph {
 	var entranceError error
 	if entrance != `` {
 		entrancei, entranceError = strconv.Atoi(values[`entrance`])
-		if entranceError == nil && !db.ValidateMemberEntrance(entrancei) {
+		if entranceError == nil && entrancei == 0 {
 			entranceError = errors.New(`entrance out of range`)
 		}
 	}
@@ -246,14 +245,14 @@ func graphMembers(dbInstance db.DB, base string, routeQuery []string) graph {
 	}
 }
 
-func graphOfficer(db db.DB, base string, routeQuery []string) graph {
+func graphOfficer(dbInstance db.DB, base string, routeQuery []string) graph {
 	var description string
 	var title string
 
 	id := parseQuery(routeQuery)[`id`]
-	name, queryError := db.QueryOfficerName(id)
+	name, queryError := dbInstance.QueryOfficerName(id)
 	switch queryError {
-	case sql.ErrNoRows:
+	case db.IncorrectIdentity:
 		description = `神楽坂一丁目通信局の不明な役職です。`
 		title = `TsuboneSystem 不明な役職です`
 

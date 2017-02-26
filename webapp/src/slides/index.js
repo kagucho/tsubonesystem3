@@ -11,6 +11,6 @@ import skyDrawing from "./sky_drawing.jpg";
 
 /**
 	The slides for the private page.
-	@type external:ES.String[]
+	@type !String[]
 */
 export default Object.freeze([sakuraDrawing, sakuraPhoto, skyDrawing]);

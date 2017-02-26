@@ -47,39 +47,6 @@ func TestErrorEncode(t *testing.T) {
 	}
 }
 
-func TestRecover(t *testing.T) {
-	t.Parallel()
-
-	t.Run(`normal`, func(t *testing.T) {
-		t.Parallel()
-
-		recorder := httptest.NewRecorder()
-
-		Recover(recorder)
-
-		if recorder.Code != http.StatusOK {
-			t.Error(`invalid status code; expected `, http.StatusOK,
-				`, got `, recorder.Code)
-		}
-	})
-
-	t.Run(`panicked`, func(t *testing.T) {
-		t.Parallel()
-
-		recorder := httptest.NewRecorder()
-
-		func() {
-			defer Recover(recorder)
-			panic(0)
-		}()
-
-		if recorder.Code != http.StatusInternalServerError {
-			t.Error(`invalid status code; expected `, http.StatusInternalServerError,
-				`, got `, recorder.Code)
-		}
-	})
-}
-
 func TestServeError(t *testing.T) {
 	t.Parallel()
 

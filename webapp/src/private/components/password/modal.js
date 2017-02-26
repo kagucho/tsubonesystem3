@@ -8,163 +8,96 @@
 
 /** @module private/components/password/modal */
 
-/**
-	module:private/components/password/modal is a component to show modal
-	dialogs to update the password of the user.
-	This component is reusable but NOT reentrant.
-	@name module:private/components/password/modal
-	@type external:Mithril~Component
-*/
-
+import * as alert from "../alert";
+import * as modal from "../../modal";
 import * as primitive from "./primitive";
-import {ensureRedraw} from "../../mithril";
 
-export class controller {
-	constructor() {
-		this.primitive = new primitive.controller(promise => {
-			this.fireLoadstart(promise);
-			this.loading = true;
+/**
+	registerLoading registers a loading.
+	@private
+	@param {!module:private/modal~Node} node - The node in the list of the
+	modal dialogs.
+	@param {!external:jQuery~Promise} promise - A promise representing a
+	loading.
+	@returns {Undefined}
+*/
+function reflectLoadingToModal(node, promise) {
+	const loading = modal.unshift(alert.inprogress, primitive.inprogress);
 
-			promise.then(() => {
-				this.slides.push({type: "success"});
-				delete this.loading;
-			}, message => {
-				this.slides.push({type: "error", message});
-				delete this.loading;
-			});
-		});
+	const filteredPromise = promise.then(submission => {
+		loading.remove();
+		node.remove();
 
-		this.slides = [];
-	}
+		modal.unshift((submission ? alert.leavable : alert.closable)(
+			m("span", {"aria-hidden": "true"},
+				m("span", {className: "glyphicon glyphicon-ok"}),
+				" "
+			), primitive.success
+		));
+	}, xhr => {
+		loading.remove();
 
-	finishSlide() {
-		const {type} = this.slides.shift();
+		modal.unshift(alert.closable(
+			m("span", {"aria-hidden": "true"},
+				m("span", {className: "glyphicon glyphicon-exclamation-sign"}),
+				" "
+			), primitive.error(xhr)
+		));
+	});
 
-		if (type == "success") {
-			this.finish();
-		}
-	}
-
-	updateAttributes(attributes) {
-		this.finish = attributes.onhidden || $.noop;
-		this.fireLoadstart = attributes.onloadstart;
-	}
+	return filteredPromise;
 }
 
-export function view(control, attributes) {
-	let content;
+/**
+	labelID is the ID of the labelling element.
+	@type !String
+*/
+export const labelID = "component-password-modal-title";
 
-	control.updateAttributes(attributes);
+/**
+	newComponent returns a new component to show a modal dialog to update
+	the password of the user.
+	@returns {!module:private/modal~Component} A new component to show a
+	modal dialog to update the password of the user.
+*/
+export function newComponent() {
+	const state = primitive.newState();
+	let modalNode;
 
-	if (control.slides.length) {
-		switch (control.slides[0].type) {
-		case "error":
-			content = m("div", {className: "modal-content"},
-				m("div", {className: "modal-body"},
-					primitive.errorView(control.slides[0].message)
-				), m("div", {className: "modal-footer"},
-					m("button", {
-						className:      "btn btn-default",
-						type:           "button",
-						"data-dismiss": "modal",
-					}, "閉じる")
-				)
-			);
-			break;
+	return {
+		oninit() {
+			state.setOnloadstart(
+				reflectLoadingToModal.bind(modalNode));
+		},
 
-		case "success":
-			content = m("div", {className: "modal-content"},
-				m("div", {className: "modal-body"},
-					primitive.successView),
-				m("div", {className: "modal-footer"},
-					m("button", {
-						className:      "btn btn-default",
-						type:           "button",
-						"data-dismiss": "modal",
-					}, "閉じる")
-				)
-			);
-			break;
+		onmodalinit(initModalNode) {
+			modalNode = initModalNode;
+		},
 
-		default:
-			throw new Error("unknown type: "+control.slides[0].type);
-		}
-	}
+		onshown() {
+			state.focus();
+		},
 
-	return m("div",
-		m("div", {
-			ariaHidden:     control.loading || control.slides.length ? "true" : "false",
-			ariaLabelledby: "component-password-modal-title",
-			className:      "modal fade",
-			config:         (function(element, initialized, context) {
-				const jquery = $(element);
-
-				if (!initialized) {
-					context.onunload = jquery.modal.bind(jquery, "hide");
-
-					jquery.on("hidden.bs.modal",
-						() => !control.loading && !this.slides.length &&
-							ensureRedraw(this.finish));
-				}
-
-				jquery.modal(control.loading || this.slides.length ? "hide" : "show");
-			}).bind(control),
-			role:     "dialog",
-			tabindex: "-1",
-		}, m("div", {className: "modal-dialog", role: "document"},
-			m("form", {className: "modal-content"},
+		view() {
+			return m("form", {className: "modal-content"},
 				m("div", {className: "modal-header"},
 					m("button", {
-						ariaLabel:      "閉じる",
+						"aria-label":   "閉じる",
+						"data-dismiss": "modal",
 						className:      "close",
 						type:           "button",
-						"data-dismiss": "modal",
-					}, m("span", {ariaHidden: "true"}, "×")),
+					}, m("span", {"aria-hidden": "true"}, "×")),
 					m("a", {
 						className: "lead modal-title",
 						href:      "#!password",
-						id:        "component-password-modal-title",
-					}, primitive.titleView)
+						id:        labelID,
+					}, primitive.title)
 				), m("div", {className: "modal-body"},
-					primitive.bodyView(control.primitive)
+					m(state.body)
 				), m("div", {className: "modal-footer"},
-					primitive.buttonView(control.primitive)
+					m(state.button)
 				)
-			)
-		)),
-		m("div", {
-			ariaHidden: !control.loading || content ? "true" : "false",
-			className:  "modal fade",
-			config:     (function(element, initialized, context) {
-				const jquery = $(element);
-
-				if (!initialized) {
-					context.onunload = jquery.modal.bind(jquery, "hide");
-				}
-
-				jquery.modal(!this.loading || this.slides.length ? "hide" : "show");
-			}).bind(control),
-			"data-backdrop": "static",
-		}, m("div", {className: "modal-dialog", role: "document"},
-			m("div", {className: "modal-body"},
-				primitive.inprogressView
-			)
-		)),
-		content && m("div", {
-			className: "modal fade",
-			config:    (function(element, initialized, context) {
-				const jquery = $(element);
-
-				if (!initialized) {
-					context.onunload = jquery.modal.bind(jquery, "hide");
-
-					jquery.on("hidden.bs.modal",
-						ensureRedraw.bind(undefined,
-							this.finishSlide.bind(this)));
-				}
-
-				jquery.modal("show");
-			}).bind(control),
-		}, m("div", {className: "modal-dialog", role: "document"}, content))
-	);
+			);
+		},
+	};
 }

@@ -7,16 +7,16 @@
 
 /** @module private/client/api */
 
-import {ensureRedraw} from "../mithril";
+import {Wrapper} from "../promise";
 
 /**
 	ajax returns fetched and decoded JSON.
-	@param {!external:ES.String} uri - The URI.
-	@param {!external:ES.String} method - The method.
-	@param {?external:ES.String} token - The token.
-	@param {?external:ES.Object} data - The data.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
-	fetched JSON.
+	@private
+	@param {!String} uri - The URI.
+	@param {!String} method - The method.
+	@param {?String} [token] - The token.
+	@param {?*} [data] - The data.
+	@returns {!module:private/promise} A promise resolved with fetched JSON.
 */
 function ajax(uri, method, token, data) {
 	const xhr = new XMLHttpRequest();
@@ -44,18 +44,46 @@ function ajax(uri, method, token, data) {
 
 	const jqXHR = $.ajax(uri, opts);
 	const deferred = $.Deferred();
+	const wrapper = new Wrapper;
+	let uploadProgress = {loaded: 0, total: 0};
 
-	xhr.onprogress = deferred.notify.bind(deferred);
+	xhr.upload.onprogress = event => {
+		deferred.notify(wrapper.progressProxy(event));
+		uploadProgress = event;
+	};
 
-	jqXHR.then(deferred.resolve, deferred.reject);
+	xhr.onprogress = event => deferred.notify(wrapper.progressProxy(Object.defineProperties({}, {
+		lengthComputable: {
+			get() {
+				return uploadProgress.lengthComputable || event.lengthComputable;
+			},
+		},
 
-	return ensureRedraw(deferred);
+		loaded: {
+			get() {
+				return uploadProgress.loaded + event.loaded;
+			},
+		},
+
+		total: {
+			get() {
+				return uploadProgress.total + event.total;
+			},
+		},
+	})));
+
+	jqXHR.then(
+		(response, status, event) => deferred.resolve(response, status, wrapper.alwaysProxy(event)),
+		(event, status, xhrError) => deferred.reject(wrapper.alwaysProxy(event), status, xhrError)
+	);
+
+	return wrapper.wrap(deferred);
 }
 
 /**
 	error returns the error message corresponding to jqXHR.
 	@param   {!external:jQuery~jqXHR} - A failed jqXHR.
-	@returns {!external:ES.String} The error message.
+	@returns {!String} The error message.
 */
 export function error(xhr) {
 	switch (xhr.status) {
@@ -80,182 +108,245 @@ export function error(xhr) {
 
 /**
 	getTokenWithPassword returns a token authorized with the given password.
-	@param {!external:ES.String} username - The ID.
-	@param {!external:ES.String} password - The password.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with a
-	token.
+	@function
+	@param {!String} username - The ID.
+	@param {!String} password - The password.
+	@returns {!module:private/promise} A promise resolved with a token.
 */
-export function getTokenWithPassword(username, password) {
-	/*
-		RFC 6749 - The OAuth 2.0 Authorization Framework
-		4.3.2.  Access Token Request
-		https://tools.ietf.org/html/rfc6749#section-4.3.2
-		> grant_type
-		>       REQUIRED.  Value MUST be set to "password".
-		>
-		> username
-		>       REQUIRED.  The resource owner username.
-		>
-		> password
-		>       REQUIRED.  The resource owner password.
-	*/
-
-	/* eslint-disable camelcase */
-	return ajax("/api/v0/token", "POST", null,
-              {grant_type: "password", username, password});
-	/* eslint-enable camelcase */
-}
+/*
+	RFC 6749 - The OAuth 2.0 Authorization Framework
+	4.3.2.  Access Token Request
+	https://tools.ietf.org/html/rfc6749#section-4.3.2
+	> grant_type
+	>       REQUIRED.  Value MUST be set to "password".
+	>
+	> username
+	>       REQUIRED.  The resource owner username.
+	>
+	> password
+	>       REQUIRED.  The resource owner password.
+*/
+/* eslint-disable camelcase */
+export const getTokenWithPassword =
+	(username, password) => ajax("/api/v0/token", "POST", null,
+		{grant_type: "password", username, password});
+/* eslint-enable camelcase */
 
 /**
 	getTokenWithRefreshToken returns a token authorized with the given
 	refresh token.
-	@param {!external:ES.String} token - The refresh token.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with a
-	token.
+	@function
+	@param {!String} token - The refresh token.
+	@returns {!module:private/promise} A promise resolved with a token.
 */
-export function getTokenWithRefreshToken(token) {
-	/*
-		6.  Refreshing an Access Token
-		https://tools.ietf.org/html/rfc6749#section-6
-		> grant_type
-		>       REQUIRED.  Value MUST be set to "refresh_token".
-		>
-		> refresh_token
-		>       REQUIRED.  The refresh token issued to the client.
-	*/
-
-	/* eslint-disable camelcase */
-	return ajax("/api/v0/token", "POST", null,
-              {grant_type: "refresh_token", refresh_token: token});
-	/* eslint-enable camelcase */
-}
+/*
+	6.  Refreshing an Access Token
+	https://tools.ietf.org/html/rfc6749#section-6
+	> grant_type
+	>       REQUIRED.  Value MUST be set to "refresh_token".
+	>
+	> refresh_token
+	>       REQUIRED.  The refresh token issued to the client.
+*/
+/* eslint-disable camelcase */
+export const getTokenWithRefreshToken =
+	token => ajax("/api/v0/token", "POST", null,
+		{grant_type: "refresh_token", refresh_token: token});
+/* eslint-enable camelcase */
 
 /**
 	clubDetail returns the details of the club identified with the given ID.
-	@param {!external:ES.String} token - The access token.
-	@param {!external:ES.String} id - The ID.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
-	the details.
+	@function
+	@param {!String} token - The access token.
+	@param {!String} id - The ID.
+	@returns {!module:private/promise} A promise resolved with the details.
 */
-export function clubDetail(token, id) {
-	return ajax("/api/v0/club/detail", "GET", token, {id});
-}
+export const clubDetail =
+	(token, id) => ajax("/api/v0/club/detail", "GET", token, {id});
 
 /**
 	clubList returns the clubs.
-	@param {!external:ES.String} token - The access token.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with the
-	clubs.
+	@function
+	@param {!String} token - The access token.
+	@returns {!module:private/promise} A promise resolved with the clubs.
 */
-export function clubList(token) {
-	return ajax("/api/v0/club/list", "GET", token);
-}
+export const clubList = token => ajax("/api/v0/club/list", "GET", token);
 
 /**
-	clubListName returns the names of clubs associated with IDs.
-	@param {!external:ES.String} token - The access token.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
-	the club names.
+	clubListnames returns the names of clubs associated with IDs.
+	@function
+	@returns {!module:private/promise} A promise resolved with the club
+	names.
 */
-export function clubListName(token) {
-	return ajax("/api/v0/club/listname", "GET", token);
-}
+export const clubListnames = () => ajax("/api/v0/club/listnames", "GET");
 
 /**
-	TODO
+	mail sends an email.
+	@function
+	@param {!String} token - The access token.
+	@param {!*} properties - The properties of the email.
+	@returns {!module:private/promise} A promise describing the progress
+	and the result.
 */
-export function memberConfirm(token, mailToken) {
-	return ajax("/api/v0/member/confirm", "POST", token, {token: mailToken});
-}
+export const mail =
+	(token, properties) => ajax("/api/v0/mail", "POST", token, properties);
 
 /**
-	TODO
+	memberCreate creates a new member.
+	@function
+	@param {!String} token - The access token.
+	@param {!*} properties - The properties of the new member.
+	@returns {!module:private/promise} A promise describing the progress
+	and the result.
 */
-export function memberCreate(token, properties) {
-	return ajax("/api/v0/member/create", "POST", token, properties);
-}
+export const memberCreate =
+	(token, properties) => ajax("/api/v0/member/create", "POST", token, properties);
 
 /**
 	memberDetail returns the details of the member identified with the given
 	ID.
-	@param {!external:ES.String} token - The access token.
-	@param {!external:ES.String} id - The ID.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
-	the details.
+	@function
+	@param {!String} token - The access token.
+	@param {!String} id - The ID.
+	@returns {!module:private/promise} A promise resolved with the details.
 */
-export function memberDetail(token, id) {
-	return ajax("/api/v0/member/detail", "GET", token, {id});
-}
-
-/**
-	TODO
-*/
-export function memberDeclareOB(token) {
-	return ajax("/api/v0/member/declareob", "POST", token);
-}
+export const memberDetail =
+	(token, id) => ajax("/api/v0/member/detail", "GET", token, {id});
 
 /**
 	memberDelete deletes a member identified with the given ID.
-	@param {!external:ES.String} token - The access token.
-	@param {!external:ES.String} id - The ID.
-	@returns {!external:jQuery.$.Deferred#promise} A promise describing the
-	result.
+	@function
+	@param {!String} token - The access token.
+	@param {!String} id - The ID.
+	@returns {!module:private/promise} A promise describing the result.
 */
-export function memberDelete(token, id) {
-	return ajax("/api/v0/member/delete", "POST", token, {id});
-}
-
-/**
-	memberUpdate returns the result of updating properties of the user
-	as a member.
-	@param {!external:ES.String} token - The access token.
-	@param {!external:ES.Object} properties - The properties to update.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
-	the result.
-*/
-export function memberUpdate(token, properties) {
-	return ajax("/api/v0/member/update", "POST", token, properties);
-}
-
-/**
-	memberUpdatePassword returns the result of updating the user password.
-	@param {!external:ES.String} token - The access token.
-	@param {!external:ES.Object} properties - The properties to update.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
-	the result.
-*/
-export function memberUpdatePassword(token, properties) {
-	return ajax("/api/v0/member/updatepassword", "POST", token, properties);
-}
+export const memberDelete =
+	(token, id) => ajax("/api/v0/member/delete", "POST", token, {id});
 
 /**
 	memberList returns the members.
-	@param {!external:ES.String} token - The access token.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
+	@function
+	@param {!String} token - The access token.
+	@returns {!module:private/promise} A promise resolved with the members.
+*/
+export const memberList = token => ajax("/api/v0/member/list", "GET", token);
+
+/**
+	memberListroles lists the roles of the members.
+	@function
+	@param {!String} token - The access token.
+	@returns {!module:private/promise} A promise resolved with the roles of
 	the members.
 */
-export function memberList(token) {
-	return ajax("/api/v0/member/list", "GET", token);
-}
+export const memberListroles =
+	token => ajax("/api/v0/member/listroles", "GET", token);
 
 /**
 	officerDetail returns the details of the officer identified with the
 	given ID.
-	@param {!external:ES.String} token - The access token.
-	@param {!external:ES.String} id - The ID.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
-	the details.
+	@function
+	@param {!String} token - The access token.
+	@param {!String} id - The ID.
+	@returns {!module:private/promise} A promise resolved with the details.
 */
-export function officerDetail(token, id) {
-	return ajax("/api/v0/officer/detail", "GET", token, {id});
-}
+export const officerDetail =
+	(token, id) => ajax("/api/v0/officer/detail", "GET", token, {id});
 
 /**
 	officerList returns the officers.
-	@param {!external:ES.String} token - The access token.
-	@returns {!external:jQuery.$.Deferred#promise} A promise resolved with
-	the officers.
+	@function
+	@param {!String} token - The access token.
+	@returns {!module:private/promise} A promise resolved with the officers.
 */
-export function officerList(token) {
-	return ajax("/api/v0/officer/list", "GET", token);
-}
+export const officerList = token => ajax("/api/v0/officer/list", "GET", token);
+
+/**
+	partyCreate creates a party.
+	@function
+	@param {!String} token - The access token.
+	@param {!*} properties - Properties of the party.
+	@returns {!module:private/promise} A promise describing the result.
+*/
+export const partyCreate =
+	(token, properties) => ajax("/api/v0/party/create", "POST", token, properties);
+
+/**
+	partyList lists the parties.
+	@function
+	@param {!String} token - The access token.
+	@returns {!module:private/promise} A promise resolved with the parties.
+*/
+export const partyList = token => ajax("/api/v0/party/list", "GET", token);
+
+/**
+	partyListnames lists the names of the parties.
+	@function
+	@param {!String} token - The access token.
+	@returns {!module:provate/promise} A promise resolved with the names of
+	the parties.
+*/
+export const partyListnames =
+	token => ajax("/api/v0/party/listnames", "GET", token);
+
+/**
+	TODO
+*/
+export const partyRespond =
+	(token, properties) =>
+		ajax("/api/v0/party/respond", "GET", token, properties);
+
+/**
+	userConfirm confirms the email address of the user by submitting the
+	token sent to the address.
+	@function
+	@param {!String} token - The access token.
+	@param {!String} mailToken - The token sent to the address.
+	@returns {!module:private/promise} A promise describing the progress
+	and the result.
+*/
+export const userConfirm =
+	(token, mailToken) =>
+		ajax("/api/v0/user/confirm", "POST",
+			token, {token: mailToken});
+
+/**
+	userDeclareOB declares the user is an OB.
+	@function
+	@param {!String} token - The access token.
+	@returns {!module:private/promise} A promise describing the progress
+	and the result.
+*/
+export const userDeclareOB =
+	token => ajax("/api/v0/user/declareob", "POST", token);
+
+/**
+	userDetail returns the details of the user.
+	@function
+	@param {!String} token - The access token.
+	@param {!String} id - The ID.
+	@returns {!module:private/promise} A promise resolved with the details.
+*/
+export const userDetail =
+	token => ajax("/api/v0/user/detail", "GET", token);
+
+/**
+	userUpdate returns the result of updating properties of the user.
+	@function
+	@param {!String} token - The access token.
+	@param {!*} properties - The properties to update.
+	@returns {!module:private/promise} A promise resolved with the result.
+*/
+export const userUpdate =
+	(token, properties) =>
+		ajax("/api/v0/user/update", "POST", token, properties);
+
+/**
+	userUpdatePassword returns the result of updating the user password.
+	@function
+	@param {!String} token - The access token.
+	@param {!*} properties - The properties to update.
+	@returns {!module:private/promise} A promise resolved with the result.
+*/
+export const userUpdatePassword =
+	(token, properties) =>
+		ajax("/api/v0/user/updatepassword", "POST", token, properties);

@@ -27,10 +27,10 @@ import (
 )
 
 var Table = []string{
-	scope.Update:     `update`,
-	scope.Basic:      `basic`,
-	scope.Privacy:    `privacy`,
 	scope.Management: `management`,
+	scope.Member:     `member`,
+	scope.Privacy:    `privacy`,
+	scope.User:       `user`,
 }
 
 // Decode returns the decoded scope.

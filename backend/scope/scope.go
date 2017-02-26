@@ -20,10 +20,10 @@ package scope
 
 // The index of the flags for the scopes.
 const (
-	Update uint = iota
-	Basic
+	Management uint = iota
+	Member
 	Privacy
-	Management
+	User
 )
 
 // Scope is the common expression of scope

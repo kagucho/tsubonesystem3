@@ -50,8 +50,15 @@ module.exports.pitch = function(request) {
 			return sync(error);
 		}
 
-		if (compilation.errors.length > 0) {
-			return sync(compilation.errors[0]);
+		compilation.fileDependencies.forEach(this.addDependency);
+		compilation.contextDependencies.forEach(this.addContextDependency);
+
+		this._module.errors.push(...compilation.errors);
+		this._module.warnings.push(...compilation.warnings);
+
+		if (compilation.errors.length) {
+			sync("child compiler failed");
+			return;
 		}
 
 		for (const name in compilation.assets) {
@@ -60,9 +67,6 @@ module.exports.pitch = function(request) {
 				this._compilation.assets[name] = compilation.assets[name];
 			}
 		}
-
-		compilation.fileDependencies.forEach(this.addDependency);
-		compilation.contextDependencies.forEach(this.addContextDependency);
 
 		sync(null, this.exec(compilation.assets.entry.source(), request).toString());
 	});

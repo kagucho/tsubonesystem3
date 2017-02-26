@@ -5,10 +5,11 @@
   "main": "see_readme.js",
   "scripts": {
     "vnu": "java -jar node_modules/vnu-jar/build/dist/vnu.jar",
+    "eslint-browser": "eslint --env browser,commonjs,es6,jquery --global m,moment,punycode",
     "eslint-build": "eslint --env node --ignore-pattern src .",
-    "eslint-src": "eslint --env browser,es6,jquery --ignore-pattern 'src/**/*_test.js' src",
-    "eslint-test": "eslint --env browser,es6,jquery,mocha 'src/**/*_test.js'",
-    "jsdoc": "jsdoc -r -R ../README.md src",
+    "eslint-src": "npm run eslint-browser -- --ignore-pattern 'src/**/*_test.js' src",
+    "eslint-test": "npm run eslint-browser -- --env mocha 'src/**/*_test.js'",
+    "jsdoc": "jsdoc -r -R jsdoc_readme.md src",
     "karma": "karma",
     "webpack": "webpack"
   },
@@ -35,7 +36,7 @@
     "postcss-loader": "^1.2.0",
     "style-loader": "^0.13.1",
     "stylelint": "^7.6.0",
-    "stylelint-config-standard": "^15.0.0",
+    "stylelint-config-standard": "^16.0.0",
     "url-loader": "^0.5.7",
     "webpack": "^2.2.0"
   },
@@ -55,7 +56,7 @@
     "karma-phantomjs-launcher": "^1.0.2",
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^2.0.1",
-    "mithril": "^0.2.5",
+    "mithril": "^1.0.0",
     "mocha": "^3.1.2",
     "vnu-jar": "^17.1.0"
   }

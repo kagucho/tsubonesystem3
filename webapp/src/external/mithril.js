@@ -7,54 +7,38 @@
 */
 
 /**
-	Mithril is a client-side MVC framework
-	- a tool to organize code in a way that is easy to think about and to
-	maintain.
+	Mithril is a modern client-side Javascript framework for building Single
+	Page Applications.
 	@external Mithril
-	@see {@link http://mithril.js.org/mithril.html|Mithril API}
+	@see {@link http://mithril.js.org/|Introduction - Mithril.js}
 */
 
 /**
-	m is a convenience method to compose virtual elements that can be
-	rendered via m.render().
-	@class external:Mithril.m
-	@extends external:ES.Object
-	@see {@link http://mithril.js.org/mithril.html|Mithril API}
+	Node represents an HTML element in a Mithril view.
+	@interface external:Mithril~Node
+	@extends Object
+	@see {@link http://mithril.js.org/vnodes.html#structure|
+		Virtual DOM nodes - Mithril.js Structure}
 */
 
 /**
-	Children can be rendered via m.render().
-	@typedef {(external:Mithril.m|external:ES.String|external:Mithril~Children[])}
+	external:Mithril~Children is a child vnode.
+	@typedef {(external:Mithril~Node|String|Number|Boolean|external:Mithril~Children[])}
 		external:Mithril~Children
 */
 
 /**
-	Component is a building block for Mithril applications.
-	They allow developers to encapsulate functionality into reusable units.
+	Component is an encapsulated part of a view to make code easier to
+	organize and/or reuse.
 	@typedef external:Mithril~Component
-	@type {external:ES.Object}
-	@property {?external:Mithril~Controller} controller - The
-	function which returns the control.
-	@property {!external:Mithril~View} view - The function
-	which returns the children.
-	@see {@link http://mithril.js.org/mithril.component.html|
-		m.component - Mithril}
+	@see {@link http://mithril.js.org/components.html|
+		Components - Mithril.js}
 */
 
 /**
-	Controller returns the control.
-	@callback external:Mithril~Controller
-	@param {...*} - The arguments passed to m.component except the component
-	itself.
-	@returns {?external:ES.Object} The control.
-*/
-
-/**
-	View returns the children.
-	@callback external:Mithril~View
-	@param {?external:ES.Object} - The control returned by
-	external:Mithril~Controller.
-	@param {...*} - The arguments passed to m.component except the component
-	itself.
-	@returns {?external:Mithril~Children} The children.
+	Routes is an object whose keys are route strings and values are either
+	components or a RouteResolver.
+	@typedef external:Mithril~Routes
+	@see {@link http://mithril.js.org/route.html#signature|
+		route(root, defaultRoute, routes) - Mithril.js}
 */

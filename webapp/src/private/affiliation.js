@@ -9,15 +9,15 @@
 
 /**
 	id is the ID attribute of affiliation datalist.
-	@type !external:ES.String
+	@type !String
 */
 export const id = "affiliation";
 
 /**
 	update updates affiliation datalist with the given affiliations.
-	@param {!external:ES~Iterable<external:ES.String>} affiliations - The
+	@param {!Iterable.<String>} affiliations - The
 	affiliations.
-	@returns {external:ES~Undefined}
+	@returns {Undefined}
 */
 export function update(affiliations) {
 	m.render(document.getElementById(id),

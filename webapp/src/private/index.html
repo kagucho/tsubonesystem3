@@ -18,9 +18,14 @@
 <html lang="ja">
 	<head prefix="og: http://ogp.me/ns#">
 		<link href="favicon.ico" rel="icon">
+		<link href="../footer.css" rel="stylesheet">
 		<link crossorigin="anonymous"
 			href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"
 			integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+			rel="stylesheet">
+		<link crossorigin="anonymous"
+			href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/2.1.25/daterangepicker.min.css"
+			integrity="sha384-MSaAe7AwWVeSGXG9IADADGlknSDY739BswC+hxqjF2pvXeLpNfc+Zk54haVjfy5j"
 			rel="stylesheet">
 		<meta property="og:title"
 			content="TsuboneSystem">
@@ -33,6 +38,26 @@
 		<meta property="og:description"
 			content="神楽坂一丁目通信局の局員が使用するWebサービスです。">
 		<meta property="og:locale" content="ja_JP">
+		<script defer crossorigin="anonymous"
+			integrity="sha384-KgEy7s3ThYKule8wWiu2WJkm0AmJeSLkXku5PY5X8MhVgdm8K1ebsVRKHfNfWPrR"
+			src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment.min.js">
+		</script>
+		<script defer crossorigin="anonymous"
+			integrity="sha384-xP/SGSreGEdLw4Jh6qAnACo8W13l7S61jgh07ThrfE1fl0asUykHTn2M3X3jZX89"
+			src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/locale/ja.js">
+		</script>
+		<script defer crossorigin="anonymous"
+			integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7"
+			src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js">
+		</script>
+		<script defer crossorigin="anonymous"
+			integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+			src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js">
+		</script>
+		<script defer crossorigin="anonymous"
+			integrity="sha384-Ljzx1trmxEBhlO3iIMNHxGZcEUIhsUcB2r9NVhVZfDKGCjIQ7KSFa2f+VxdnTV5Z"
+			src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/2.1.25/daterangepicker.min.js">
+		</script>
 		<style>
 			${require("./index.css")}
 			${require("../crossfade/index.css")}
@@ -41,23 +66,60 @@
 	</head>
 	<body>
 		<div id="container">
-			<script crossorigin="anonymous"
-				integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7"
-				src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js">
+			<script>${require("../../entry/loader!./index.js")}</script>
+			<script async crossorigin="anonymous"
+				onload="execute('mithril')"
+				integrity="sha384-0eJVCFsnr+DhU/kroNh1PFqEDXNgpAApLJRJFIPh2yStFWQyhRLZ/UqH37JoUWka"
+				src="https://cdnjs.cloudflare.com/ajax/libs/mithril/1.0.1/mithril.min.js">
 			</script>
-			<script crossorigin="anonymous" defer
-				integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-				src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js">
+			<script async crossorigin="anonymous"
+				onload="execute('polyfill')"
+				integrity="sha384-rBjL8Ve1ukKGEEUDNBI7BMlT5bSdfwzP4M7OPBylbmAs3xPUg5rE43D8SLBSWARA"
+				src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.20.0/polyfill.min.js">
 			</script>
-			<script crossorigin="anonymous"
-				integrity="sha384-BRxrkBiXXzRD1sMNIuDIVo9RvCASqWwEDVc3pvvQxniGYmuqOP9Y+skO6gUTQ8m4"
-				src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.20.0/polyfill.js">
+			<script async crossorigin="anonymous"
+				onload="execute('punycode')"
+				integrity="sha384-kYoat7wV2dqq6mlzlqlbYpHDJPBOUO9WDZBUD1ucpLuRXcirbaGAcR+Wo2ILOWO6"
+				src="https://cdnjs.cloudflare.com/ajax/libs/punycode/1.4.1/punycode.min.js">
 			</script>
-			<script crossorigin="anonymous"
-				integrity="sha384-zZXk4t2ZLkcffUO5H+wurzf+/SBfwpWEl4g5TBwm+K/ibUfFi+q4BplGtbA+LVto"
-				src="https://cdnjs.cloudflare.com/ajax/libs/mithril/0.2.5/mithril.min.js">
-			</script>
-			<script>${require("../../loader/js.js!./index.js")}</script>
+			<noscript>
+				<div class="container">
+					<header>
+						<img alt="ロゴ" class="hidden-xs pull-right"
+							src="../images/logo250c_black.png" />
+						<h1 class="text-nowrap">神楽坂一丁目通信局</h1>
+					</header>
+					<main>
+						<article>
+							<h1>JavaScriptを使用できません</h1>
+							<dl>
+								<dt>どういうこっちゃ</dt>
+								<dd>このページはJavaScriptによる黒魔術展開で構成されていますが、お使いの環境ではJavaScriptが実装されてない、あるいは無効にされているため表示できません。</dd>
+								<dt>どうすれば?</dt>
+								<dd>
+									対応しているWebブラウザを利用してください。次のとおりです。
+									<ul>
+										<li>Google Chrome 53以降</li>
+										<li>Microsoft Edge</li>
+										<li>Microsoft Internet Explorer 11以降</li>
+										<li>Mozilla Firefox 45以降</li>
+									</ul>
+									また、JavaScriptが有効になっているか確認してください。
+								</dd>
+							</dl>
+						</article>
+					</main>
+				</div>
+				${require("../footer.html")}
+			</noscript>
+		</div>
+		<div
+			aria-hidden="true" class="modal fade"
+			role="dialog" style="text-align: center;" tabindex="-1">
+			<div
+				class="modal-dialog" role="document"
+				style="display: inline-block; text-align: left; width: auto;">
+			</div>
 		</div>
 		<datalist id="affiliation">
 		</datalist>

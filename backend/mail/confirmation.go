@@ -20,9 +20,10 @@ package mail
 import (
 	"net/mail"
 	"net/url"
+	"strings"
 )
 
-func (context Mail) SendConfirmation(host string, address mail.Address, token string) error {
+func (context Mail) SendConfirmation(host string, address mail.Address, id string, token string) error {
 	var data struct {
 		Base         string
 		Confirmation string
@@ -32,8 +33,9 @@ func (context Mail) SendConfirmation(host string, address mail.Address, token st
 	data.Base = constructing.String()
 
 	constructing.Path = `/private`
-	constructing.Fragment = `!settings?confirm=` + token
+	constructing.Fragment = strings.Join([]string{`!member?id=`, id, `&confirm=`, token}, ``)
 	data.Confirmation = constructing.String()
 
-	return context.send(host, address, `confirmation`, data)
+	return context.send(host, []string{`-t`}, ``, []mail.Address{address},
+		`TsuboneSystem メール確認`, templateConfirmation, data)
 }

@@ -18,6 +18,7 @@
 // Package public implements a router for the public Web pages.
 package public
 
+import "github.com/kagucho/tsubonesystem3/backend/handler/apiv0/club"
 import "github.com/kagucho/tsubonesystem3/backend/handler/apiv0/token/server"
 
 // Public is a structure to hold the context of the public router.
@@ -27,7 +28,12 @@ type Public struct {
 
 // New returns a new Public.
 func New() Public {
-	return Public{map[string]Route{`/token`: server.New().ServeHTTP}}
+	return Public{
+		map[string]Route{
+			`/club/listnames`: club.ListnamesServeHTTP,
+			`/token`:          server.New().ServeHTTP,
+		},
+	}
 }
 
 // GetRoute returns the route for the given path.

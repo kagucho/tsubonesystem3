@@ -33,7 +33,7 @@ type Claim struct {
 	Sub       string
 	Scope     string
 	Duration  time.Duration
-	Temporary bool
+	Tmp       bool
 }
 
 // Error is a structure to hold the error and URI for the description.

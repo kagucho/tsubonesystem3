@@ -20,17 +20,29 @@ package db
 
 import (
 	"database/sql"
-
-	// Any Driver import should be blank.
-	_ "github.com/go-sql-driver/mysql"
-
+	"errors"
+	"github.com/go-sql-driver/mysql"
 	"github.com/kagucho/tsubonesystem3/configuration"
+	"github.com/kagucho/tsubonesystem3/json"
+	"log"
 )
+
+type NullTime mysql.NullTime
 
 // DB is a structure to keep the connection to the database.
 type DB struct {
 	sql   *sql.DB
 	stmts [stmtNumber]*sql.Stmt
+}
+
+var IncorrectIdentity = errors.New(`incorrect identity`)
+
+func (nullTime NullTime) MarshalJSON() ([]byte, error) {
+	if !nullTime.Valid {
+		return []byte(`null`), nil
+	}
+
+	return json.MarshalTime(nullTime.Time)
 }
 
 // Prepare prepares the database.
@@ -40,6 +52,15 @@ func Prepare() (DB, error) {
 
 	db.sql, prepareError = sql.Open(`mysql`, configuration.DBDSN)
 	if prepareError != nil {
+		return db, prepareError
+	}
+
+	_, prepareError = db.sql.Exec(`SET sql_mode='TRADITIONAL'`)
+	if prepareError != nil {
+		if closeError := db.Close(); closeError != nil {
+			log.Print(closeError)
+		}
+
 		return db, prepareError
 	}
 

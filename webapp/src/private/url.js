@@ -11,17 +11,17 @@
 
 /**
 	mailto returns the URL of the given mail address.
-	@param {!external:ES.String} address - The mail address.
-	@returns {!external:ES.String} The corresponding URL.
+	@param {!String} address - The mail address.
+	@returns {!String} The corresponding URL.
 	@see {@link https://tools.ietf.org/html/rfc6068|
 		RFC 6068 - The 'mailto' URI Scheme}
 */
-export const mailto = address => "mailto:" + encodeURIComponent(address);
+export const mailto = address => "mailto:" + punycode.toASCII(encodeURIComponent(address));
 
 /**
 	tel returns the URL of the given telphone number.
-	@param {!external:ES.String} number - The telphone number.
-	@returns {!external:ES.String} The corresponding URL.
+	@param {!String} number - The telphone number.
+	@returns {!String} The corresponding URL.
 	@see {@link https://tools.ietf.org/html/rfc3966|
 		RFC 3966 - The tel URI for Telephone Numbers}
 */

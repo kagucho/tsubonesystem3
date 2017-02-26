@@ -9,8 +9,10 @@
 
 import Crossfade from "./crossfade";
 
-document.getElementById("about-button").onclick =
-	() => $(document.scrollingElement).animate(
-		{scrollTop: document.getElementById("about").offsetTop});
+onload = () => {
+	document.getElementById("about-button").onclick =
+		() => $(document.scrollingElement).animate(
+			{scrollTop: document.getElementById("about").offsetTop});
 
-(new Crossfade(document.getElementById("background"))).start();
+	(new Crossfade(document.getElementById("background"))).start();
+};

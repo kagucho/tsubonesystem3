@@ -195,6 +195,6 @@ describe("module:api", () => {
 					}, this.skip.bind(this));
 				});
 			});
-		}).bind(consumer);
+		}.bind(consumer))();
 	}
 });

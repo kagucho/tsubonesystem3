@@ -1,14 +1,10 @@
 {
 	"extends": "eslint:all",
-	"globals": {"m": false},
 	"parserOptions": {"ecmaVersion": 7, "sourceType": "module"},
 	"rules": {
 		"arrow-parens":                ["warn", "as-needed"],
 		"callback-return":             "off",
 		"capitalized-comments":        "off",
-		"class-methods-use-this":      [
-			"warn", {"exceptMethods": ["controller"]}
-		],
 		"comma-dangle":                ["warn", "always-multiline"],
 		"complexity":                  "off",
 		"consistent-return":           "off",
@@ -19,6 +15,7 @@
 			"warn", "declaration", {"allowArrowFunctions": true}
 		],
 		"global-require":              "off",
+		"guard-for-in":                "off",
 		"id-length":                   "off",
 		"indent":                      ["warn", "tab"],
 		"init-declarations":           "off",
@@ -30,15 +27,17 @@
 		"max-statements":              "off",
 		"multiline-ternary":           "off",
 		"new-cap":                     [
-			"warn", {
+			"warn",
+			{
 				"capIsNewExceptionPattern": "^\\$\\.",
-				"newIsCapExceptions": ["controller"]
+				"newIsCapExceptions": ["default"]
 			}
 		],
 		"new-parens":                  "off",
 		"newline-after-var":           "off",
 		"newline-per-chained-call":    "off",
 		"no-confusing-arrow":          "off",
+		"no-debugger":                 "off",
 		"no-eq-null":                  "off",
 		"no-extra-parens":             "off",
 		"no-invalid-this":             "off",
@@ -52,9 +51,11 @@
 		"no-plusplus":                 "off",
 		"no-process-env":              "off",
 		"no-restricted-syntax":        ["warn", "WithStatement"],
+		"no-return-assign":            "off",
 		"no-tabs":                     "off",
 		"no-ternary":                  "off",
 		"no-undefined":                "off",
+		"no-use-before-define":        "off",
 		"no-void":                     "off",
 		"object-curly-newline":        "off",
 		"object-property-newline":     "off",

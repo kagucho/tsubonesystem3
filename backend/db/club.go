@@ -17,7 +17,11 @@
 
 package db
 
-import "github.com/kagucho/tsubonesystem3/chanjson"
+import (
+	"database/sql"
+	"github.com/kagucho/tsubonesystem3/json"
+	"strings"
+)
 
 // Chief is a structure to hold the information about a member.
 type Chief struct {
@@ -28,14 +32,16 @@ type Chief struct {
 	Tel      string `json:"tel",omitempty`
 }
 
-// Club is a structure to hold the information about a club.
-type Club struct {
-	Chief   Chief             `json:"chief"`
-	Members chanjson.ChanJSON `json:"members"`
-	Name    string            `json:"name"`
+// ClubDetail is a structure to hold the information about a club.
+type ClubDetail struct {
+	Chief   Chief          `json:"chief"`
+	Members ClubMemberChan `json:"members"`
+	Name    string         `json:"name"`
 }
 
-type clubMemberResult struct {
+type ClubMemberChan <-chan ClubMemberResult
+
+type ClubMemberResult struct {
 	Error error
 	Value struct {
 		Entrance uint16 `json:"entrance",omitempty`
@@ -45,66 +51,74 @@ type clubMemberResult struct {
 	}
 }
 
-type clubName struct {
+type ClubName struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-type clubNameResult struct {
+type ClubNameChan <-chan ClubNameResult
+
+type ClubNameResult struct {
 	Error error
-	Value clubName
+	Value ClubName
 }
 
-type club struct {
-	clubName
+type ClubEntry struct {
+	ClubName
 	Chief Chief `json:"chief"`
 }
 
-type clubResult struct {
+type ClubEntryChan <-chan ClubEntryResult
+
+type ClubEntryResult struct {
 	Error error
-	Value club
+	Value ClubEntry
 }
 
-// QueryClub returns db.Club corresponding with the given ID.
-func (db DB) QueryClub(id string) (Club, error) {
-	var chiefID uint16
+func (entryChan ClubEntryChan) MarshalJSON() ([]byte, error) {
+	return json.MarshalChan(entryChan)
+}
+
+func (memberChan ClubMemberChan) MarshalJSON() ([]byte, error) {
+	return json.MarshalChan(memberChan)
+}
+
+func (nameChan ClubNameChan) MarshalJSON() ([]byte, error) {
+	return json.MarshalChan(nameChan)
+}
+
+// QueryClubDetail returns db.ClubDetail corresponding with the given ID.
+func (db DB) QueryClubDetail(id string) (ClubDetail, error) {
 	var clubID uint8
-	var club Club
+	var club ClubDetail
 
-	if scanError := db.stmts[stmtSelectClub].QueryRow(id).Scan(&chiefID, &clubID, &club.Name); scanError != nil {
-		return Club{}, scanError
-	}
-
-	if scanError := db.stmts[stmtSelectOfficerMemberInternal].QueryRow(chiefID).Scan(
+	if scanError := db.stmts[stmtSelectClub].QueryRow(id).Scan(
+		&clubID, &club.Name,
 		&club.Chief.ID, &club.Chief.Mail,
 		&club.Chief.Nickname, &club.Chief.Realname,
-		&club.Chief.Tel); scanError != nil {
-		return Club{}, scanError
+		&club.Chief.Tel); scanError == sql.ErrNoRows {
+		return ClubDetail{}, IncorrectIdentity
+	} else if scanError != nil {
+		return ClubDetail{}, scanError
 	}
 
-	members := make(chan clubMemberResult)
+	members := make(chan ClubMemberResult)
 
 	go func() {
 		defer close(members)
 
-		rows, queryError := db.stmts[stmtSelectClubMembers].Query(clubID)
+		rows, queryError := db.stmts[stmtSelectMembersByClub].Query(clubID)
 		if queryError != nil {
-			members <- clubMemberResult{Error: queryError}
+			members <- ClubMemberResult{Error: queryError}
 			return
 		}
 
 		defer rows.Close()
 
 		for rows.Next() {
-			var memberID uint16
+			var result ClubMemberResult
 
-			if scanError := rows.Scan(&memberID); scanError != nil {
-				members <- clubMemberResult{Error: scanError}
-				return
-			}
-
-			var result clubMemberResult
-			result.Error = db.stmts[stmtSelectBriefMemberInternal].QueryRow(memberID).Scan(
+			result.Error = rows.Scan(
 				&result.Value.Entrance, &result.Value.ID,
 				&result.Value.Nickname, &result.Value.Realname)
 
@@ -116,7 +130,7 @@ func (db DB) QueryClub(id string) (Club, error) {
 		}
 	}()
 
-	club.Members = chanjson.New(members)
+	club.Members = members
 
 	return club, nil
 }
@@ -125,26 +139,29 @@ func (db DB) QueryClub(id string) (Club, error) {
 func (db DB) QueryClubName(id string) (string, error) {
 	var name string
 	scanError := db.stmts[stmtSelectClubName].QueryRow(id).Scan(&name)
+	if scanError == sql.ErrNoRows {
+		scanError = IncorrectIdentity
+	}
 
 	return name, scanError
 }
 
-// QueryClubNames returns chanjson.ChanJSON which represents the names of
-// all the clubs.
-func (db DB) QueryClubNames() chanjson.ChanJSON {
-	resultChan := make(chan clubNameResult)
+// QueryClubNames returns db.ClubNameChan which represents the names of all the
+// clubs.
+func (db DB) QueryClubNames() ClubNameChan {
+	resultChan := make(chan ClubNameResult)
 
 	go func() {
 		defer close(resultChan)
 
 		rows, queryError := db.stmts[stmtSelectClubNames].Query()
 		if queryError != nil {
-			resultChan <- clubNameResult{Error: queryError}
+			resultChan <- ClubNameResult{Error: queryError}
 			return
 		}
 
 		for rows.Next() {
-			var result clubNameResult
+			var result ClubNameResult
 
 			result.Error = rows.Scan(
 				&result.Value.ID, &result.Value.Name)
@@ -157,32 +174,27 @@ func (db DB) QueryClubNames() chanjson.ChanJSON {
 		}
 	}()
 
-	return chanjson.New(resultChan)
+	return resultChan
 }
 
-// QueryClubs returns chanjson.ChanJSON which represents all the clubs.
-func (db DB) QueryClubs() chanjson.ChanJSON {
-	resultChan := make(chan clubResult)
+// QueryClubs returns db.ClubEntryChan which represents all the clubs.
+func (db DB) QueryClubs() ClubEntryChan {
+	resultChan := make(chan ClubEntryResult)
 
 	go func() {
 		defer close(resultChan)
 
-		clubs, queryError := db.stmts[stmtSelectClubs].Query()
+		rows, queryError := db.stmts[stmtSelectClubs].Query()
 		if queryError != nil {
-			resultChan <- clubResult{Error: queryError}
+			resultChan <- ClubEntryResult{Error: queryError}
 			return
 		}
 
-		for clubs.Next() {
-			var result clubResult
-			var chiefID uint16
+		for rows.Next() {
+			var result ClubEntryResult
 
-			if scanError := clubs.Scan(&chiefID, &result.Value.ID, &result.Value.Name); scanError != nil {
-				resultChan <- clubResult{Error: scanError}
-				return
-			}
-
-			result.Error = db.stmts[stmtSelectOfficerMemberInternal].QueryRow(chiefID).Scan(
+			result.Error = rows.Scan(
+				&result.Value.ID, &result.Value.Name,
 				&result.Value.Chief.ID, &result.Value.Chief.Mail,
 				&result.Value.Chief.Nickname, &result.Value.Chief.Realname,
 				&result.Value.Chief.Tel)
@@ -191,5 +203,27 @@ func (db DB) QueryClubs() chanjson.ChanJSON {
 		}
 	}()
 
-	return chanjson.New(resultChan)
+	return resultChan
+}
+
+func (db DB) txQueryInternalClubs(tx *sql.Tx, clubs []string) (map[uint8]struct{}, error) {
+	clubIDs := make(map[uint8]struct{}, len(clubs))
+
+	rows, queryError := tx.Stmt(db.stmts[stmtSelectInternalClubs]).Query(strings.Join(clubs, `,`))
+	if queryError != nil {
+		return nil, queryError
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var id uint8
+		if scanError := rows.Scan(&id); scanError != nil {
+			return nil, scanError
+		}
+
+		clubIDs[id] = struct{}{}
+	}
+
+	return clubIDs, nil
 }
