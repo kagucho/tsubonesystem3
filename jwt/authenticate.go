@@ -30,10 +30,10 @@ import (
 
 // Claim is a structure to hold the processed and validated claim
 type Claim struct {
-	Sub       string
-	Scope     string
-	Duration  time.Duration
-	Tmp       bool
+	Sub      string
+	Scope    string
+	Duration time.Duration
+	Tmp      bool
 }
 
 // Error is a structure to hold the error and URI for the description.
@@ -57,8 +57,8 @@ func (context JWT) validateHeader(encoded string) Error {
 		base64.RawURLEncoding, strings.NewReader(encoded)))
 
 	var decoded header
-	if decodeError := decoder.Decode(&decoded); decodeError != nil {
-		return Error{decodeError, `https://tools.ietf.org/html/rfc7159`}
+	if err := decoder.Decode(&decoded); err != nil {
+		return Error{err, `https://tools.ietf.org/html/rfc7159`}
 	}
 
 	if decoder.More() {
@@ -84,10 +84,10 @@ func validClaim(encoded string) (Claim, Error) {
 		base64.RawURLEncoding, strings.NewReader(encoded)))
 
 	var decoded claim
-	if decodeError := decoder.Decode(&decoded); decodeError != nil {
+	if err := decoder.Decode(&decoded); err != nil {
 		return Claim{},
 			Error{
-				decodeError,
+				err,
 				`https://tools.ietf.org/html/rfc7159`,
 			}
 	}
@@ -100,14 +100,13 @@ func validClaim(encoded string) (Claim, Error) {
 			}
 	}
 
-	exp := time.Unix(decoded.Exp, 0)
 	now := time.Now()
-	duration := exp.Sub(now)
+	duration := decoded.Exp.Sub(now)
 	if duration < 0 {
 		return Claim{},
 			Error{
 				fmt.Errorf(`claim is expired; it is %v, claim says expired in %v`,
-					now, exp),
+					now, decoded.Exp),
 				`https://tools.ietf.org/html/rfc7519#section-4.1.4`,
 			}
 	}
@@ -130,16 +129,16 @@ func (context JWT) Authenticate(jwt string) (Claim, Error) {
 		return Claim{}, invalid
 	}
 
-	claim, claimError := validClaim(splited[1])
-	if claimError.error != nil {
-		return Claim{}, claimError
+	claim, claimErr := validClaim(splited[1])
+	if claimErr.error != nil {
+		return Claim{}, claimErr
 	}
 
-	signature, decodeError := base64.RawURLEncoding.DecodeString(splited[2])
-	if decodeError != nil {
+	signature, decodeErr := base64.RawURLEncoding.DecodeString(splited[2])
+	if decodeErr != nil {
 		return Claim{},
 			Error{
-				decodeError,
+				decodeErr,
 				`https://tools.ietf.org/html/rfc4648#section-5`,
 			}
 	}

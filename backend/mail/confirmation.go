@@ -23,6 +23,7 @@ import (
 	"strings"
 )
 
+// SendConfirmation sends an email to confirm the email address.
 func (context Mail) SendConfirmation(host string, address mail.Address, id string, token string) error {
 	var data struct {
 		Base         string

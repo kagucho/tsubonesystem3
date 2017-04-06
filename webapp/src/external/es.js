@@ -76,6 +76,15 @@
 */
 
 /**
+	Uint32Array object.
+	@class Uint32Array
+	@see {@link
+		http://www.ecma-international.org/ecma-262/7.0/index.html#sec-typedarray-objects|
+		ECMAScript® 2016 Language Specification
+		22.2 TypedArray Objects}
+*/
+
+/**
 	WeakMap object is a collection of key/value pairs where the keys are
 	objects and values may be arbitrary ECMAScript language values.
 	@class WeakMap

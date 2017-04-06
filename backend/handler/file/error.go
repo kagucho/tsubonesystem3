@@ -29,30 +29,30 @@ import (
 	"strconv"
 )
 
-// FileError is a structure to hold the context to serve error files.
-type FileError struct {
+// Error is a structure to hold the context to serve error files.
+type Error struct {
 	fileSystem       http.FileSystem
 	movedPermanently *template.Template
 }
 
-// NewError returns a new file.FileError.
-func NewError(share string) (FileError, error) {
+// NewError returns a new file.Error.
+func NewError(share string) (Error, error) {
 	errorPath := path.Join(share, `error`)
 
-	movedPermanently, parseError :=
+	movedPermanently, err :=
 		template.ParseFiles(path.Join(errorPath, `301`))
-	if parseError != nil {
-		return FileError{}, parseError
+	if err != nil {
+		return Error{}, err
 	}
 
-	return FileError{http.Dir(errorPath), movedPermanently}, nil
+	return Error{http.Dir(errorPath), movedPermanently}, nil
 }
 
 // ServeError serves the error file corresponding with the given status code.
-func (context FileError) ServeError(writer http.ResponseWriter,
+func (context Error) ServeError(writer http.ResponseWriter,
 	code int) (servedContent bool) {
+	var err error
 	var file http.File
-	var fileError error
 	var fileInfo os.FileInfo
 
 	defer func() {
@@ -72,8 +72,9 @@ func (context FileError) ServeError(writer http.ResponseWriter,
 
 			writer.WriteHeader(code)
 
-			if _, copyError := io.Copy(writer, file); copyError != nil {
-				log.Println(copyError)
+			_, err = io.Copy(writer, file)
+			if err != nil {
+				log.Println(err)
 			}
 
 			servedContent = true
@@ -96,26 +97,26 @@ func (context FileError) ServeError(writer http.ResponseWriter,
 				log.Println(recovered)
 				debug.PrintStack()
 
-				file, fileError = context.fileSystem.Open(`unknown`)
-				if fileError != nil {
-					panic(fileError)
+				file, err = context.fileSystem.Open(`unknown`)
+				if err != nil {
+					panic(err)
 				}
 
-				fileInfo, fileError = file.Stat()
-				if fileError != nil {
-					panic(fileError)
+				fileInfo, err = file.Stat()
+				if err != nil {
+					panic(err)
 				}
 			}
 		}()
 
-		file, fileError = context.fileSystem.Open(strconv.Itoa(code))
-		if fileError != nil {
-			panic(fileError)
+		file, err = context.fileSystem.Open(strconv.Itoa(code))
+		if err != nil {
+			panic(err)
 		}
 
-		fileInfo, fileError = file.Stat()
-		if fileError != nil {
-			panic(fileError)
+		fileInfo, err = file.Stat()
+		if err != nil {
+			panic(err)
 		}
 	}()
 
@@ -123,7 +124,7 @@ func (context FileError) ServeError(writer http.ResponseWriter,
 }
 
 // ServeMovedPermanently serves "Moved Permanently" status.
-func (context FileError) ServeMovedPermanently(writer http.ResponseWriter,
+func (context Error) ServeMovedPermanently(writer http.ResponseWriter,
 	location string) {
 	var buffer bytes.Buffer
 
@@ -137,8 +138,8 @@ func (context FileError) ServeMovedPermanently(writer http.ResponseWriter,
 
 			writer.WriteHeader(http.StatusMovedPermanently)
 
-			if _, writeError := buffer.WriteTo(writer); writeError != nil {
-				log.Println(writeError)
+			if _, err := buffer.WriteTo(writer); err != nil {
+				log.Println(err)
 			}
 		} else {
 			writer.WriteHeader(http.StatusMovedPermanently)
@@ -148,7 +149,7 @@ func (context FileError) ServeMovedPermanently(writer http.ResponseWriter,
 		}
 	}()
 
-	if executeError := context.movedPermanently.Execute(&buffer, location); executeError != nil {
-		panic(executeError)
+	if err := context.movedPermanently.Execute(&buffer, location); err != nil {
+		panic(err)
 	}
 }

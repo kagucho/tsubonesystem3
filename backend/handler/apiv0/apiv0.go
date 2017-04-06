@@ -20,92 +20,82 @@ package apiv0
 
 import (
 	"github.com/kagucho/tsubonesystem3/backend/db"
-	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/common"
-	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/context"
-	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/router/private"
-	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/router/public"
-	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/token/authorizer"
 	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/token/backend"
+	"github.com/kagucho/tsubonesystem3/backend/handler/apiv0/util"
 	"github.com/kagucho/tsubonesystem3/backend/mail"
+	"github.com/kagucho/tsubonesystem3/safehttp"
 	"log"
 	"net/http"
 	"runtime/debug"
+	"strings"
 )
 
-// APIv0 is a structure to hold the context of API v0.
+type shared struct {
+	DB    db.DB
+	Mail  mail.Mail
+	Token backend.Backend // FIXME: why exported?
+}
+
+/*
+APIv0 is a structure to hold the context of API v0. It should be initialized
+with apiv0.New.
+*/
 type APIv0 struct {
-	context context.Context
-	public  public.Public
+	shared       shared
+	routes       routeSlice
+	tokenServer  *tokenServer
 }
 
-type apiv0Writer struct {
-	http.ResponseWriter
-	header http.Header
-	written *bool
-}
-
-func (writer apiv0Writer) Header() http.Header {
-	return writer.header
-}
-
-func (writer apiv0Writer) Write(bytes []byte) (int, error) {
-	writer.prepare()
-	return writer.ResponseWriter.Write(bytes)
-}
-
-func (writer apiv0Writer) WriteHeader(code int) {
-	writer.prepare()
-	writer.ResponseWriter.WriteHeader(code)
-}
-
-func (writer apiv0Writer) prepare() {
-	if !*writer.written {
-		*writer.written = true
-
-		header := writer.ResponseWriter.Header()
-		for key, value := range writer.header {
-			header[key] = value
-		}
-	}
-}
-
-// New returns a new APIv0.
+/*
+New returns a new apiv0.APIv0. End must be called before disposing returned
+apiv0.APIv0.
+*/
 func New(db db.DB, mail mail.Mail) (APIv0, error) {
-	token, tokenError := backend.New()
-	if tokenError != nil {
-		return APIv0{}, tokenError
+	token, err := backend.New()
+	if err != nil {
+		return APIv0{}, err
 	}
 
-	return APIv0{context.Context{db, mail, token}, public.New()}, nil
+	apiv0 := APIv0{
+		shared: shared{db, mail, token},
+		tokenServer: newTokenServer(),
+	}
+
+	apiv0.routes = apiv0.newRoutes()
+
+	return apiv0, nil
 }
 
-// ServeHTTP servs API v0 via HTTP.
+/*
+End releases the resources.
+
+After calling it, any functions bound to the apiv0.APIv0 will result in
+unexpected result.
+*/
+func (apiv0 APIv0) End() {
+	apiv0.tokenServer.end()
+}
+
+// ServeHTTP serves API v0 via HTTP.
 func (apiv0 APIv0) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	written := false
-	apiv0Writer := apiv0Writer{writer, http.Header{}, &written}
+	safeWriter := safehttp.NewWriter(writer)
 
-	defer func() {
-		if !written {
-			common.ServeErrorDefault(writer, http.StatusInternalServerError)
+	defer safeWriter.Recover(func() {
+		util.ServeErrorDefault(writer, http.StatusInternalServerError)
 
-			log.Print(recover())
-			debug.PrintStack()
+		log.Print(recover())
+		debug.PrintStack()
+	})
+
+	index := apiv0.routes.search(request.URL.Path)
+	if index > len(apiv0.routes) || apiv0.routes[index].prefix != request.URL.Path {
+		index--
+		if index < 0 || !strings.HasPrefix(request.URL.Path, apiv0.routes[index].prefix) || request.URL.Path[len(apiv0.routes[index].prefix)] != '/' {
+			util.ServeErrorDefault(&safeWriter, http.StatusNotFound)
+			return
 		}
-	}()
-
-	publicRoute := apiv0.public.GetRoute(request.URL.Path)
-	if publicRoute != nil {
-		publicRoute(apiv0Writer, request, apiv0.context)
-
-		return
 	}
 
-	privateRoute := private.GetRoute(request.URL.Path)
-	if privateRoute.Handle == nil {
-		common.ServeErrorDefault(apiv0Writer, http.StatusNotFound)
-
-		return
-	}
-
-	authorizer.Authorize(apiv0Writer, request, apiv0.context, privateRoute)
+	request.URL.Path = strings.TrimPrefix(request.URL.Path, apiv0.routes[index].prefix)
+	apiv0.routes[index].handler.serveHTTP(&safeWriter, request, apiv0.shared)
 }

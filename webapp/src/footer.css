@@ -24,7 +24,7 @@ footer {
 	border-color:        black;
 	border-top-style:    solid;
 	border-width:        .1rem;
-	min-height:          50px; /* same with navbar; see private/components/container.js */
+	min-height:          50px; /* same with navbar; see private/component/container.js */
 	padding-top:         1rem;
 	width:               100%;
 }

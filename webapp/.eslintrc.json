@@ -2,6 +2,7 @@
 	"extends": "eslint:all",
 	"parserOptions": {"ecmaVersion": 7, "sourceType": "module"},
 	"rules": {
+		"array-callback-return":       "off",
 		"arrow-parens":                ["warn", "as-needed"],
 		"callback-return":             "off",
 		"capitalized-comments":        "off",
@@ -21,6 +22,7 @@
 		"init-declarations":           "off",
 		"key-spacing":                 ["warn", {"align": "value"}],
 		"lines-around-comment":        "off",
+		"line-comment-position":       "off",
 		"max-len":                     "off",
 		"max-lines":                   "off",
 		"max-params":                  "off",
@@ -36,10 +38,14 @@
 		"new-parens":                  "off",
 		"newline-after-var":           "off",
 		"newline-per-chained-call":    "off",
+		"no-bitwise":                  "off",
 		"no-confusing-arrow":          "off",
+		"no-constant-condition":       ["warn", {"checkLoops": false}],
+		"no-continue":                 "off",
 		"no-debugger":                 "off",
 		"no-eq-null":                  "off",
 		"no-extra-parens":             "off",
+		"no-inline-comments":          "off",
 		"no-invalid-this":             "off",
 		"no-empty-function":           "off",
 		"no-lonely-if":                "off",
@@ -65,6 +71,11 @@
 			{"overrides": {"?": "after", ":": "after"}}
 		],
 		"padded-blocks":               ["warn", "never"],
+		"prefer-const":                [
+			"warn",
+			{"ignoreReadBeforeAssign": true}
+		],
+		"prefer-destructuring":        "off",
 		"prefer-rest-params":          "off",
 		"prefer-template":             "off",
 		"quote-props":                 "off",

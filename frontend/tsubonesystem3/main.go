@@ -29,18 +29,18 @@ import (
 )
 
 func main() {
-	backend, backendError := backend.New()
-	if backendError != nil {
-		log.Panic(backendError)
+	backend, backendErr := backend.New()
+	if backendErr != nil {
+		log.Panic(backendErr)
 	}
 
-	listener, listenerError := net.Listen(`tcp`, configuration.ListenAddress)
-	if listenerError != nil {
-		if closeError := backend.Close(); closeError != nil {
-			log.Print(closeError)
+	listener, listenerErr := net.Listen(`tcp`, configuration.ListenAddress)
+	if listenerErr != nil {
+		if endErr := backend.End(); endErr != nil {
+			log.Print(endErr)
 		}
 
-		log.Panic(listenerError)
+		log.Panic(listenerErr)
 	}
 
 	go func() {
@@ -48,12 +48,12 @@ func main() {
 		signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 		<-signalChan
 
-		if closeError := listener.Close(); closeError != nil {
-			log.Print(closeError)
+		if closeErr := listener.Close(); closeErr != nil {
+			log.Print(closeErr)
 		}
 
-		if closeError := backend.Close(); closeError != nil {
-			log.Print(closeError)
+		if endErr := backend.End(); endErr != nil {
+			log.Print(endErr)
 		}
 	}()
 

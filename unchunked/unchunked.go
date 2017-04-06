@@ -73,12 +73,12 @@ func (unchunked Unchunked) ServeHTTP(writer http.ResponseWriter, request *http.R
 			unchunkedResponseWriter: commonWriter,
 		}
 
-		var gzipError error
-		gzipWriter.gzip, gzipError = gzip.NewWriterLevel(
+		var err error
+		gzipWriter.gzip, err = gzip.NewWriterLevel(
 			&gzipWriter.unchunkedResponseWriter.state.buffer,
 			gzip.BestCompression)
-		if gzipError != nil {
-			panic(gzipError)
+		if err != nil {
+			panic(err)
 		}
 
 		unchunked.handle(gzipWriter, request)

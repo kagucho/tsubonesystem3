@@ -7,24 +7,16 @@
 
 /** @module private/client */
 
-import Client from "./client";
+import * as client from "./client";
+import * as api from "./api";
+
+const instance = client.default();
+instance.error = api.error;
+instance.merge = client.merge;
 
 /**
 	module:private/client is the client.
 	@constant
 	@type !module:private/client/client
 */
-export default new Proxy(new Client, {
-	get(target, key) {
-		return target[key] ?
-			new Proxy(target[key], {
-				apply(propertyTarget, propertyThis, propertyArguments) {
-					return propertyTarget.apply(target, propertyArguments);
-				},
-			}) : target.constructor[key];
-	},
-
-	has(target, key) {
-		return key in target || key in target.constructor;
-	},
-});
+export default instance;

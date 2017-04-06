@@ -69,9 +69,9 @@ func graphClub(dbInstance db.DB, base string, routeQuery []string) graph {
 	var title string
 
 	id := parseQuery(routeQuery)[`id`]
-	name, queryError := dbInstance.QueryClubName(id)
-	switch queryError {
-	case db.IncorrectIdentity:
+	name, err := dbInstance.QueryClubName(id)
+	switch err {
+	case db.ErrIncorrectIdentity:
 		description = `神楽坂一丁目通信局の不明な部門です。`
 		title = `TsuboneSystem 不明な部門です`
 
@@ -80,7 +80,7 @@ func graphClub(dbInstance db.DB, base string, routeQuery []string) graph {
 		title = `TsuboneSystem ` + name + `の詳細情報`
 
 	default:
-		panic(queryError)
+		panic(err)
 	}
 
 	url := base + `#!club?id=` + url.QueryEscape(id)
@@ -116,9 +116,9 @@ func graphMember(dbInstance db.DB, base string, routeQuery []string) graph {
 	properties := make([]property, 0, 8)
 
 	id := parseQuery(routeQuery)[`id`]
-	memberGraph, queryError := dbInstance.QueryMemberGraph(id)
-	switch queryError {
-	case db.IncorrectIdentity:
+	memberGraph, err := dbInstance.QueryMemberGraph(id)
+	switch err {
+	case db.ErrIncorrectIdentity:
 		properties = append(properties,
 			property{
 				`og:description`,
@@ -151,7 +151,7 @@ func graphMember(dbInstance db.DB, base string, routeQuery []string) graph {
 		}
 
 	default:
-		panic(queryError)
+		panic(err)
 	}
 
 	url := base + `#!member?id=` + url.QueryEscape(id)
@@ -167,21 +167,21 @@ func graphMember(dbInstance db.DB, base string, routeQuery []string) graph {
 
 func graphMembers(dbInstance db.DB, base string, routeQuery []string) graph {
 	var description string
+	var err error
 	fragment := `#!members`
 
 	values := parseQuery(routeQuery)
 
 	entrance := values[`entrance`]
 	entrancei := 0
-	var entranceError error
 	if entrance != `` {
-		entrancei, entranceError = strconv.Atoi(values[`entrance`])
-		if entranceError == nil && entrancei == 0 {
-			entranceError = errors.New(`entrance out of range`)
+		entrancei, err = strconv.Atoi(values[`entrance`])
+		if err == nil && entrancei == 0 {
+			err = errors.New(`entrance out of range`)
 		}
 	}
 
-	if entranceError == nil {
+	if err == nil {
 		nickname := values[`nickname`]
 		realname := values[`realname`]
 		ob := values[`ob`]
@@ -220,10 +220,10 @@ func graphMembers(dbInstance db.DB, base string, routeQuery []string) graph {
 			fragment += `?` + strings.Join(components, `&`)
 		}
 
-		count, queryError := dbInstance.QueryMembersCount(
+		count, err := dbInstance.QueryMembersCount(
 			entrancei, nickname, realname, status)
-		if queryError != nil {
-			panic(queryError)
+		if err != nil {
+			panic(err)
 		}
 
 		description = fmt.Sprint(`神楽坂一丁目通信局の局員検索結果です。`,
@@ -250,9 +250,9 @@ func graphOfficer(dbInstance db.DB, base string, routeQuery []string) graph {
 	var title string
 
 	id := parseQuery(routeQuery)[`id`]
-	name, queryError := dbInstance.QueryOfficerName(id)
-	switch queryError {
-	case db.IncorrectIdentity:
+	name, err := dbInstance.QueryOfficerName(id)
+	switch err {
+	case db.ErrIncorrectIdentity:
 		description = `神楽坂一丁目通信局の不明な役職です。`
 		title = `TsuboneSystem 不明な役職です`
 
@@ -261,7 +261,7 @@ func graphOfficer(dbInstance db.DB, base string, routeQuery []string) graph {
 		title = `TsuboneSystem ` + name + `の詳細情報`
 
 	default:
-		panic(queryError)
+		panic(err)
 	}
 
 	url := base + `#!officer?id=` + url.QueryEscape(id)

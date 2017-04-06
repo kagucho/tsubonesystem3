@@ -40,6 +40,9 @@ karma:
 
 lint: eslint vnu
 
+mithril:
+	cd node_modules/mithril; npm run build
+
 prepare:
 	npm update --dev
 
@@ -48,8 +51,8 @@ test: karma
 vnu:
 	npm run vnu "$$TSUBONESYSTEM_URL" "$$TSUBONESYSTEM_URL/license" "$$TSUBONESYSTEM_URL/private" "$$TSUBONESYSTEM_URL/private?_escaped_fragment_="
 
-webpack:
+webpack: mithril
 	npm run webpack -- --output-path "$$GOPATH/share/tsubonesystem3/public" $(WEBPACKFLAGS)
 
-webpack-watch:
+webpack-watch: mithril
 	npm run webpack -- --output-path "$$GOPATH/share/tsubonesystem3/public" --watch $(WEBPACKFLAGS)

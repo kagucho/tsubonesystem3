@@ -55,15 +55,15 @@ func TestParseQuery(t *testing.T) {
 }
 
 func TestPrivate(t *testing.T) {
-	db, dbError := db.Prepare()
-	if dbError != nil {
-		t.Fatal(dbError)
+	db, err := db.Prepare()
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	t.Run(`Private`, func(t *testing.T) {
-		fileError, newError := file.NewError(`test/valid`)
-		if newError != nil {
-			t.Fatal(newError)
+		fileError, err := file.NewError(`test/valid`)
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		t.Run(`valid`, func(t *testing.T) {
@@ -72,10 +72,9 @@ func TestPrivate(t *testing.T) {
 			var private Private
 
 			if !t.Run(`New`, func(t *testing.T) {
-				var newError error
-				private, newError = New(`test/valid`, db, fileError)
-				if newError != nil {
-					t.Error(newError)
+				private, err = New(`test/valid`, db, fileError)
+				if err != nil {
+					t.Error(err)
 				}
 			}) {
 				t.FailNow()
@@ -112,9 +111,9 @@ func TestPrivate(t *testing.T) {
 
 							private.ServeHTTP(recorder, request)
 
-							body, bodyError := ioutil.ReadFile(private.file)
-							if bodyError != nil {
-								t.Fatal(bodyError)
+							body, err := ioutil.ReadFile(private.file)
+							if err != nil {
+								t.Fatal(err)
 							}
 
 							if result := recorder.HeaderMap.Get(`Content-Language`); result != `ja` {
@@ -248,10 +247,9 @@ func TestPrivate(t *testing.T) {
 			var private Private
 
 			if !t.Run(`New`, func(t *testing.T) {
-				var newError error
-				private, newError = New(`test/invalid`, db, fileError)
-				if newError != nil {
-					t.Error(newError)
+				private, err = New(`test/invalid`, db, fileError)
+				if err != nil {
+					t.Error(err)
 				}
 			}) {
 				t.FailNow()
@@ -275,12 +273,12 @@ func TestPrivate(t *testing.T) {
 		t.Run(`na`, func(t *testing.T) {
 			t.Parallel()
 
-			private, newError := New(`test/na`, db, fileError)
+			private, err := New(`test/na`, db, fileError)
 			if (private != Private{}) {
 				t.Error(`expected zero value, got `, private)
 			}
 
-			if newError == nil {
+			if err == nil {
 				t.Error(`expected an error, got nil`)
 			}
 		})
@@ -619,9 +617,8 @@ func TestPrivate(t *testing.T) {
 			}
 		})
 
-		closeError := db.Close()
-		if closeError != nil {
-			t.Fatal(closeError)
+		if err := db.Close(); err != nil {
+			t.Fatal(err)
 		}
 
 		t.Run(`dbError`, func(t *testing.T) {

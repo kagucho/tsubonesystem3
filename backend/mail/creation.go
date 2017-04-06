@@ -22,6 +22,7 @@ import (
 	"net/url"
 )
 
+// SendCreation sends an email ton continue the creation of a member.
 func (context Mail) SendCreation(host string, address mail.Address, id, token string) error {
 	var data struct {
 		Base     string

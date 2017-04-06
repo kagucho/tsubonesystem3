@@ -8,15 +8,17 @@ All of the following softwares:
 
 * [GNU Bash](https://www.gnu.org/software/bash/)
 * [GNU Make](https://www.gnu.org/software/make/)
-* [Go 1.7](https://golang.org/)
+* [Go 1.8](https://golang.org/)
 * [OpenJDK 8](http://openjdk.java.net/)
 * [MariaDB 10.1](https://mariadb.org/)
 * [Node.js](https://nodejs.org/)
 * [npm](https://npmjs.com/)
 * [procps (ps command)](https://gitlab.com/procps-ng/procps)
+* [SELinux Reference Policy](https://github.com/TresysTechnology/refpolicy)
 
-Platforms other than Arch Linux are not tested. Fixes for other Linux
-distributions, Microsoft-supported Windows and macOS are highly appreciated.
+Platforms other than Arch Linux and CentOS 7 are not tested. Fixes for other
+Linux distributions, Microsoft-supported Windows and macOS are highly
+appreciated.
 
 ## Client requirements
 Either of the following browsers:
@@ -85,6 +87,11 @@ The passwords in `members` table is encrypted with `DBPasswordKey` in
 where `N` is the member number. For example, the username and the password for
 member 1 is `1stDisplayID` and `1stPassword`.
 
+# Web Application Dependencies
+See `webapp/package.json`. `webapp/jquery.min.js` and `webapp/jquery.min.map`
+are prebuilt code of the modified jQuery hosted at
+https://github.com/akihikodaki/jquery.
+
 # License
 This software is licensed under AGPL-3.0. See `COPYING.TXT`.
 
@@ -96,7 +103,11 @@ This application implicitly conforms to the following standards.
 * [DOM Standard](https://dom.spec.whatwg.org/)
 * [ECMAScript® 2016 Language Specification](http://www.ecma-international.org/ecma-262/7.0/index.html)
 * [Encoding Standard](https://encoding.spec.whatwg.org/)
-* [The Go Programming Language Specification](https://golang.org/ref/spec)
 * [HTML Standard](https://html.spec.whatwg.org/)
+* [The Go Programming Language Specification](https://golang.org/ref/spec)
 * [URL Standard](https://url.spec.whatwg.org/)
+* [Web Audio API W3C Working Draft 08 December 2015](https://www.w3.org/TR/2015/WD-webaudio-20151208/)
 * [XMLHttpRequest Standard](https://xhr.spec.whatwg.org/)
+
+The usage of the Web Audio API is limited to complement; the lack of the API
+should not affect to the core experience.

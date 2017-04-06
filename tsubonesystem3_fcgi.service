@@ -1,0 +1,9 @@
+[Unit]
+Description=The next generation web service for the internal use
+Requires=mariadb.service
+After=mariadb.service
+
+[Service]
+ExecStart=/opt/tsubonesystem3/bin/tsubonesystem3_fcgi
+User=tsubonesystem
+UMask=117

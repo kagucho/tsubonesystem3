@@ -31,7 +31,11 @@ const getFileEntry = name => ({
 
 const htmlEntry = {
 	loader:  "html-loader",
-	options: {interpolate: true, minifyCSS: false, removeComments: false},
+	options: {
+		ignoreCustomComments: [/Copyright/],
+		interpolate: true,
+		minifyCSS:   false,
+	},
 };
 
 module.exports = {
@@ -144,5 +148,15 @@ module.exports = {
 
 if (process.env.NODE_ENV == "production") {
 	module.exports.plugins.push(
-		new (require("webpack/lib/optimize/UglifyJsPlugin"))({comments: null}));
+		new (require("webpack/lib/optimize/UglifyJsPlugin"))({
+			collapse_vars: true,
+			comments:      null,
+			pure_getters:  true,
+			reduce_vars:   true,
+			unsafe:        true,
+			unsafe_comps:  true,
+			unsafe_proto:  true,
+			warnings:      true,
+		})
+	);
 }

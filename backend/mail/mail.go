@@ -15,6 +15,7 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// Package mail implements a feature to email.
 package mail
 
 import (
@@ -31,11 +32,12 @@ import (
 	"time"
 )
 
+// Mail is a structure to hold the context to email. Initialize with mail.New.
 type Mail struct {
 	templates templates
 }
 
-type template struct{
+type template struct {
 	html *htmlTemplate.Template
 	text *textTemplate.Template
 }
@@ -71,9 +73,10 @@ var htmlMIME = textproto.MIMEHeader{
 	contentTransferEncoding: contentTransferEncodingCommon,
 }
 
+// New returns a new mail.Mail.
 func New(share string) (Mail, error) {
 	var templates templates
-	var parseError error
+	var err error
 
 	htmlBase := path.Join(share, `mail/html`)
 	textBase := path.Join(share, `mail/text`)
@@ -82,20 +85,20 @@ func New(share string) (Mail, error) {
 		templateConfirmation: `confirmation`,
 		templateCreation:     `creation`,
 		templateInvitation:   `invitation`,
-		templateMessage:      `broadcast`,
+		templateMessage:      `message`,
 	} {
-		templates[index].html, parseError = htmlTemplate.ParseFiles(path.Join(htmlBase, file))
-		if parseError != nil {
+		templates[index].html, err = htmlTemplate.ParseFiles(path.Join(htmlBase, file))
+		if err != nil {
 			break
 		}
 
-		templates[index].text, parseError = textTemplate.ParseFiles(path.Join(textBase, file))
-		if parseError != nil {
+		templates[index].text, err = textTemplate.ParseFiles(path.Join(textBase, file))
+		if err != nil {
 			break
 		}
 	}
 
-	return Mail{templates}, parseError
+	return Mail{templates}, err
 }
 
 func (context Mail) send(host string, recipients []string, toGroup string, tos []mail.Address, subject string, template templateID, data interface{}) (returning error) {
@@ -103,27 +106,27 @@ func (context Mail) send(host string, recipients []string, toGroup string, tos [
 
 	cmd := exec.Command(`sendmail`, strings.Join(recipients, `,`))
 
-	pipe, pipeError := cmd.StdinPipe()
-	if pipeError != nil {
-		return pipeError
+	pipe, pipeErr := cmd.StdinPipe()
+	if pipeErr != nil {
+		return pipeErr
 	}
 
-	if startError := cmd.Start(); startError != nil {
-		return startError
+	if startErr := cmd.Start(); startErr != nil {
+		return startErr
 	}
 
 	defer func() {
 		if recovered := recover(); recovered != nil {
-			if killError := cmd.Process.Kill(); killError != nil {
-				log.Print(killError)
+			if killErr := cmd.Process.Kill(); killErr != nil {
+				log.Print(killErr)
 			}
 
-			if waitError := cmd.Wait(); waitError != nil {
-				log.Print(waitError)
+			if waitErr := cmd.Wait(); waitErr != nil {
+				log.Print(waitErr)
 			}
 
-			if recoveredError, ok := recovered.(error); ok {
-				returning = recoveredError
+			if recoveredErr, ok := recovered.(error); ok {
+				returning = recoveredErr
 			} else {
 				panic(recovered)
 			}
@@ -131,78 +134,83 @@ func (context Mail) send(host string, recipients []string, toGroup string, tos [
 	}()
 
 	for _, data := range [...]string{
-		"Date: ", time.Now().Format(time.RFC1123),
-		lineEnding + "From: ", (&mail.Address{`TsuboneSystem`, `noreply-kagucho@` + host}).String(),
+		"Date: ",
+		time.Now().Format(time.RFC1123),
+		lineEnding + "From: ",
+		(&mail.Address{
+			Name: `TsuboneSystem`,
+			Address: `noreply-kagucho@` + host,
+		}).String(),
 		lineEnding,
 	} {
-		if _, writeError := pipe.Write([]byte(data)); writeError != nil {
-			panic(writeError)
+		if _, writeErr := pipe.Write([]byte(data)); writeErr != nil {
+			panic(writeErr)
 		}
 	}
 
-	if writeError := writeTo(pipe, toGroup, tos); writeError != nil {
-		panic(writeError)
+	if writeErr := writeTo(pipe, toGroup, tos); writeErr != nil {
+		panic(writeErr)
 	}
 
 	if subject != `` {
-		if _, writeError := pipe.Write([]byte(lineEnding)); writeError != nil {
-			panic(writeError)
+		if _, writeErr := pipe.Write([]byte(lineEnding)); writeErr != nil {
+			panic(writeErr)
 		}
 
-		if writeError := writeSubject(pipe, subject); writeError != nil {
-			panic(writeError)
+		if writeErr := writeSubject(pipe, subject); writeErr != nil {
+			panic(writeErr)
 		}
 	}
 
-	if _, writeError := pipe.Write([]byte(
+	if _, writeErr := pipe.Write([]byte(
 		lineEnding +
-		contentType + ": multipart/alternative; boundary=" + boundary + lineEnding +
-		"MIME-Version: 1.0" + lineEnding +
-		lineEnding)); writeError != nil {
-		panic(writeError)
+			contentType + ": multipart/alternative; boundary=" + boundary + lineEnding +
+			"MIME-Version: 1.0" + lineEnding +
+			lineEnding)); writeErr != nil {
+		panic(writeErr)
 	}
 
 	multipartWriter := multipart.NewWriter(pipe)
 
-	boundaryError := multipartWriter.SetBoundary(boundary)
-	if boundaryError != nil {
-		panic(boundaryError)
+	boundaryErr := multipartWriter.SetBoundary(boundary)
+	if boundaryErr != nil {
+		panic(boundaryErr)
 	}
 
-	textPart, textPartError := multipartWriter.CreatePart(textMIME)
-	if textPartError != nil {
-		panic(textPartError)
+	textPart, textPartErr := multipartWriter.CreatePart(textMIME)
+	if textPartErr != nil {
+		panic(textPartErr)
 	}
 
 	textEncoding := quotedprintable.NewWriter(textPart)
-	textExecuteError := context.templates[template].text.Execute(textEncoding, data)
+	textExecuteErr := context.templates[template].text.Execute(textEncoding, data)
 
-	if closeError := textEncoding.Close(); closeError != nil {
-		panic(closeError)
+	if closeErr := textEncoding.Close(); closeErr != nil {
+		panic(closeErr)
 	}
 
-	if textExecuteError != nil {
-		panic(textExecuteError)
+	if textExecuteErr != nil {
+		panic(textExecuteErr)
 	}
 
-	htmlPart, htmlPartError := multipartWriter.CreatePart(htmlMIME)
-	if htmlPartError != nil {
-		panic(htmlPartError)
+	htmlPart, htmlPartErr := multipartWriter.CreatePart(htmlMIME)
+	if htmlPartErr != nil {
+		panic(htmlPartErr)
 	}
 
 	htmlEncoding := quotedprintable.NewWriter(htmlPart)
-	htmlExecuteError := context.templates[template].html.Execute(htmlEncoding, data)
+	htmlExecuteErr := context.templates[template].html.Execute(htmlEncoding, data)
 
-	if closeError := htmlEncoding.Close(); closeError != nil {
-		panic(closeError)
+	if closeErr := htmlEncoding.Close(); closeErr != nil {
+		panic(closeErr)
 	}
 
-	if htmlExecuteError != nil {
-		panic(htmlExecuteError)
+	if htmlExecuteErr != nil {
+		panic(htmlExecuteErr)
 	}
 
-	if closeError := pipe.Close(); closeError != nil {
-		panic(closeError)
+	if closeErr := pipe.Close(); closeErr != nil {
+		panic(closeErr)
 	}
 
 	return cmd.Wait()

@@ -18,54 +18,112 @@
 package db
 
 import (
+	"crypto/md5"
+	"crypto/subtle"
 	"database/sql"
 	"github.com/kagucho/tsubonesystem3/backend/scope"
 	"log"
 	"strings"
 )
 
-// GetScope returns the scope of the member identified with the given
-// credentials.
-func (db DB) GetScope(user string, password string) (scope.Scope, error) {
-	var result scope.Scope
-	var id uint16
+func (db DB) Authenticate(id, password string) error {
+	rows, queryErr := db.stmts[stmtSelectMemberPasswordByID].Query(id)
+	if queryErr != nil {
+		return queryErr
+	}
 
-	if passwordError := func() error {
-		rows, queryError := db.stmts[stmtSelectMemberIDPassword].Query(user)
-		if queryError != nil {
-			return queryError
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			log.Print(closeErr)
+		}
+	}()
+
+	rows.Next()
+
+	var dbPassword sql.RawBytes
+	if scanErr := rows.Scan(&dbPassword); scanErr != nil {
+		return ErrIncorrectIdentity
+	}
+
+	return verifyPassword(password, dbPassword)
+}
+
+/*
+GetScope returns the scope of the member identified with the given
+credentials.
+
+It returns db.ErrIncorrectIdentity if the credentials are incorrect. Other
+errors tell db.DB is bad.
+*/
+func (db DB) GetScope(id string, password string) (scope.Scope, error) {
+	var result scope.Scope
+	var dbID uint16
+
+	if passwordErr := func() error {
+		rows, queryErr := db.stmts[stmtSelectMemberInternalIDPasswordByID].Query(id)
+		if queryErr != nil {
+			return queryErr
 		}
 
 		defer func() {
-			if closeError := rows.Close(); closeError != nil {
-				log.Print(closeError)
+			if closeErr := rows.Close(); closeErr != nil {
+				log.Print(closeErr)
 			}
 		}()
 
 		rows.Next()
 
 		var dbPassword sql.RawBytes
-		if scanError := rows.Scan(&id, &dbPassword); scanError != nil {
-			return IncorrectIdentity
+		if scanErr := rows.Scan(&dbID, &dbPassword); scanErr != nil {
+			return ErrIncorrectIdentity
 		}
 
-		return verifyPassword(password, dbPassword)
-	}(); passwordError != nil {
-		return result, passwordError
+		if verifyPassword(password, dbPassword) == nil {
+			return nil
+		}
+
+		// TODO: remove MD5 support
+		hashed := md5.Sum([]byte(password))
+		if subtle.ConstantTimeCompare(hashed[:], dbPassword[:md5.Size]) == 0 {
+			return ErrIncorrectIdentity
+		}
+
+		newPassword, newPasswordErr := makeDBPassword(password)
+		if newPasswordErr != nil {
+			return newPasswordErr
+		}
+
+		result, execErr := db.stmts[stmtUpdateMemberPassword].Exec(newPassword, id)
+		if execErr != nil {
+			return execErr
+		}
+
+		affected, affectedErr := result.RowsAffected()
+		if affectedErr != nil {
+			return affectedErr
+		}
+
+		if affected <= 0 {
+			return ErrIncorrectIdentity
+		}
+
+		return nil
+	}(); passwordErr != nil {
+		return result, passwordErr
 	}
 
 	result = result.Set(scope.User).Set(scope.Member)
 
-	rows, queryError := db.stmts[stmtSelectOfficerScopeByInternalMember].Query(id)
-	if queryError != nil {
-		return result, queryError
+	rows, queryErr := db.stmts[stmtSelectOfficerScopeByInternalMember].Query(dbID)
+	if queryErr != nil {
+		return result, queryErr
 	}
 
 	for rows.Next() {
 		var dbScope string
 
-		if scanError := rows.Scan(&dbScope); scanError != nil {
-			return result, scanError
+		if scanErr := rows.Scan(&dbScope); scanErr != nil {
+			return result, scanErr
 		}
 
 		for _, flag := range strings.Split(dbScope, `,`) {

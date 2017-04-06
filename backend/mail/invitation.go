@@ -18,11 +18,13 @@
 package mail
 
 import (
+	"github.com/kagucho/tsubonesystem3/backend/encoding"
 	"net/url"
 	"time"
 )
 
-func (context Mail) Invite(host string, recipients []string, title string, start, end time.Time, place, inviteds string, due time.Time, details string) error {
+// SendInvitations sends invitations.
+func (context Mail) SendInvitations(host string, recipients []string, title string, start, end encoding.Time, place, inviteds string, due encoding.Time, details string) error {
 	var data struct {
 		Title    string
 		Datetime string
@@ -48,5 +50,5 @@ func (context Mail) Invite(host string, recipients []string, title string, start
 	data.Due = due.Format(time.Stamp)
 	data.Details = details
 
-	return context.send(host, recipients, inviteds, nil, `TsuboneSystem パーティー招待: ` + title, templateInvitation, data)
+	return context.send(host, recipients, inviteds, nil, `TsuboneSystem パーティー招待: `+title, templateInvitation, data)
 }

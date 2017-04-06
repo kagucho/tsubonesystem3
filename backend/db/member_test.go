@@ -27,9 +27,9 @@ func (db DB) testQueryMember(t *testing.T) {
 	t.Run(`valid`, func(t *testing.T) {
 		t.Parallel()
 
-		detail, queryError := db.QueryMember(`1stDisplayID`)
-		if queryError != nil {
-			t.Fatal(queryError)
+		detail, err := db.QueryMember(`1stDisplayID`)
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		if expected := `理学部第一部 数理情報科学科`; detail.Affiliation != expected {
@@ -38,7 +38,7 @@ func (db DB) testQueryMember(t *testing.T) {
 		}
 
 		if expected := uint16(1901); detail.Entrance != expected {
-			t.Error(`invalid entrance; expected %v, got %v`,
+			t.Errorf(`invalid entrance; expected %v, got %v`,
 				expected, detail.Entrance)
 		}
 
@@ -124,25 +124,24 @@ func (db DB) testQueryMember(t *testing.T) {
 	t.Run(`invalid`, func(t *testing.T) {
 		t.Parallel()
 
-		detail, queryError := db.QueryMember(``)
+		detail, err := db.QueryMember(``)
 
 		if (detail != Member{}) {
 			t.Errorf(`invalid member; expected zero value, got %v`,
 				detail)
 		}
 
-		if queryError != sql.ErrNoRows {
+		if err != sql.ErrNoRows {
 			t.Errorf(`invalid error; expected %v, got %v`,
-				sql.ErrNoRows, queryError)
+				sql.ErrNoRows, err)
 		}
 	})
 }
 
 func (db DB) testQueryMemberGraph(t *testing.T) {
-	graph, queryError := db.QueryMemberGraph(`1stDisplayID`)
-
-	if queryError != nil {
-		t.Fatal(queryError)
+	graph, err := db.QueryMemberGraph(`1stDisplayID`)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	expected := MemberGraph{`男`, `1 !\%_1"#`}
@@ -153,10 +152,10 @@ func (db DB) testQueryMemberGraph(t *testing.T) {
 
 func (db DB) testQueryMembers(t *testing.T) {
 	const expected = `[{"affiliation":"理学部第一部 数理情報科学科","entrance":1901,"id":"1stDisplayID","nickname":"1 !\\%_1\"#","ob":false,"realname":"$&\\%_2'("},{"entrance":1901,"id":"2ndDisplayID","nickname":"2 !%_1\"#","ob":false,"realname":"$&\\%_2'("},{"entrance":1901,"id":"3rdDisplayID","nickname":"3 !\\%*1\"#","ob":false,"realname":"$&\\%_2'("},{"entrance":1901,"id":"4thDisplayID","nickname":"4 !)_1\"#","ob":false,"realname":"$&\\%_2'("},{"entrance":1901,"id":"5thDisplayID","nickname":"5 !\\%_1\"#","ob":false,"realname":"$&%+2'("},{"entrance":2155,"id":"6thDisplayID","nickname":"6 !\\%_1\"#","ob":false,"realname":"$&\\%+2'("},{"entrance":1901,"id":"7thDisplayID","nickname":"7 !\\%_1\"#","ob":true,"realname":"$&,_2'("}]`
-	result, resultError := db.QueryMembers().MarshalJSON()
+	result, err := db.QueryMembers().MarshalJSON()
 
-	if resultError != nil {
-		t.Error(resultError)
+	if err != nil {
+		t.Error(err)
 	}
 
 	if resultString := string(result); resultString != expected {
@@ -263,7 +262,7 @@ func (db DB) testQueryMembersCount(t *testing.T) {
 
 		t.Run(test.description, func(t *testing.T) {
 			t.Parallel()
-			count, queryError := db.QueryMembersCount(
+			count, err := db.QueryMembersCount(
 				test.entrance, test.nickname, test.realname,
 				test.status)
 
@@ -272,10 +271,10 @@ func (db DB) testQueryMembersCount(t *testing.T) {
 					test.expectedCount, count)
 			}
 
-			if (queryError == nil && test.expectedError != ``) ||
-				(queryError != nil && queryError.Error() != test.expectedError) {
+			if (err == nil && test.expectedError != ``) ||
+				(err != nil && err.Error() != test.expectedError) {
 				t.Errorf(`invalid error; expected %q, got %q`,
-					test.expectedError, queryError)
+					test.expectedError, err)
 			}
 		})
 	}

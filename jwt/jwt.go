@@ -51,8 +51,8 @@ type header struct {
 
 type claim struct {
 	Sub   string `json:"sub"`
-	Scope string `json:"scope",omitempty`
-	Exp   int64  `json:"exp",omitempty`
-	Tmp   bool   `json:"tmp",omitempty`
+	Scope string `json:"scope,omitempty"`
+	Exp   Time   `json:"exp,omitempty"`
+	Tmp   bool   `json:"tmp,omitempty"`
 	Jti   string `json:"jti"`
 }

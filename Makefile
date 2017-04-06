@@ -1,3 +1,5 @@
+SELINUX = /usr/share/selinux/devel/Makefile
+
 .PHONY: all fmt gofmt goinstall goinstall-fcgi golint gotest install	\
 	install-fcgi lint test vnu webapp-fmt webapp-install	\
 	webapp-lint webapp-test
@@ -6,6 +8,8 @@ all:
 	"$$GOPATH/bin/tsubonesystem3" & $(MAKE) -C webapp webpack-watch & wait
 
 doc: godoc jsdoc
+
+fix: gofix
 
 fmt: webapp-fmt gofmt
 
@@ -17,8 +21,14 @@ godoc: jsdoc
 godoc-clean:
 	rm -rf go out
 
+gofix:
+	go fix ./...
+
 gofmt:
-	gofmt -w .
+	go fmt ./...
+
+govet:
+	go vet ./...
 
 goinstall: frontend/tsubonesystem3
 	go install ./$<
@@ -48,6 +58,8 @@ prepare: goprepare webapp-prepare
 
 test: webapp-test gotest
 
+vet: govet
+
 webapp-fmt: webapp
 	$(MAKE) -C $< fmt
 
@@ -62,3 +74,6 @@ webapp-prepare: webapp
 
 webapp-test:
 	"$$GOPATH/bin/tsubonesystem3" & $(MAKE) -C webapp test TSUBONESYSTEM_URL=http://`go run ./frontend/tsubonesystem3_resolve/*`; kill $$!
+
+%.pp: $(SELINUX)
+	$(MAKE) -f $< $@

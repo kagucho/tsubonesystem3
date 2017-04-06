@@ -26,9 +26,9 @@ func (db DB) testQueryClub(t *testing.T) {
 	t.Run(`valid`, func(t *testing.T) {
 		t.Parallel()
 
-		detail, queryError := db.QueryClub(`prog`)
-		if queryError != nil {
-			t.Fatal(queryError)
+		detail, queryErr := db.QueryClub(`prog`)
+		if queryErr != nil {
+			t.Fatal(queryErr)
 		}
 
 		if expected := (Chief{`2ndDisplayID`, ``, `2 !%_1"#`, `$&\%_2'(`, `000-000-002`}); detail.Chief != expected {
@@ -42,9 +42,9 @@ func (db DB) testQueryClub(t *testing.T) {
 		}
 
 		const membersExpected = `[{"entrance":1901,"id":"2ndDisplayID","nickname":"2 !%_1\"#","realname":"$&\\%_2'("},{"entrance":1901,"id":"1stDisplayID","nickname":"1 !\\%_1\"#","realname":"$&\\%_2'("}]`
-		membersResult, membersError := detail.Members.MarshalJSON()
-		if membersError != nil {
-			t.Error(`invalid members; `, membersError)
+		membersResult, membersErr := detail.Members.MarshalJSON()
+		if membersErr != nil {
+			t.Error(`invalid members; `, membersErr)
 		}
 
 		if resultString := string(membersResult); resultString != membersExpected {
@@ -56,23 +56,23 @@ func (db DB) testQueryClub(t *testing.T) {
 	t.Run(`invalid`, func(t *testing.T) {
 		t.Parallel()
 
-		detail, queryError := db.QueryClub(``)
+		detail, err := db.QueryClub(``)
 
 		if (detail != Club{}) {
 			t.Error(`invalid club; expected zero value, got `,
 				detail)
 		}
 
-		if queryError != sql.ErrNoRows {
+		if err != sql.ErrNoRows {
 			t.Errorf(`invalid error; expected %v, got %v`,
-				sql.ErrNoRows, queryError)
+				sql.ErrNoRows, err)
 		}
 	})
 }
 
 func (db DB) testQueryClubName(t *testing.T) {
-	if name, queryError := db.QueryClubName(`prog`); queryError != nil {
-		t.Error(queryError)
+	if name, err := db.QueryClubName(`prog`); err != nil {
+		t.Error(err)
 	} else if name != `Prog部` {
 		t.Errorf(`expected "Prog部", got %q`, name)
 	}
@@ -80,9 +80,10 @@ func (db DB) testQueryClubName(t *testing.T) {
 
 func (db DB) testQueryClubNames(t *testing.T) {
 	const expected = `[{"id":"prog","name":"Prog部"},{"id":"web","name":"Web部"}]`
-	result, resultError := db.QueryClubNames().MarshalJSON()
-	if resultError != nil {
-		t.Error(resultError)
+
+	result, err := db.QueryClubNames().MarshalJSON()
+	if err != nil {
+		t.Error(err)
 	}
 
 	if resultString := string(result); resultString != expected {
@@ -93,9 +94,9 @@ func (db DB) testQueryClubNames(t *testing.T) {
 func (db DB) testQueryClubs(t *testing.T) {
 	const expected = `[{"id":"prog","name":"Prog部","chief":{"id":"2ndDisplayID","mail":"","nickname":"2 !%_1\"#","realname":"$&\\%_2'(","tel":"000-000-002"}},{"id":"web","name":"Web部","chief":{"id":"1stDisplayID","mail":"1st@kagucho.net","nickname":"1 !\\%_1\"#","realname":"$&\\%_2'(","tel":"000-000-001"}}]`
 
-	result, resultError := db.QueryClubs().MarshalJSON()
-	if resultError != nil {
-		t.Error(resultError)
+	result, err := db.QueryClubs().MarshalJSON()
+	if err != nil {
+		t.Error(err)
 	}
 
 	if resultString := string(result); resultString != expected {

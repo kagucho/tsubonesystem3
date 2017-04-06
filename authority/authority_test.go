@@ -45,10 +45,11 @@ func TestAuthority(t *testing.T) {
 	var authority Authority
 
 	if !t.Run(`New`, func(t *testing.T) {
-		var authorityError error
-		authority, authorityError = New()
-		if authorityError != nil {
-			t.Error(authorityError)
+		var err error
+
+		authority, err = New()
+		if err != nil {
+			t.Error(err)
 		}
 	}) {
 		t.FailNow()

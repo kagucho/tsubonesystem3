@@ -32,14 +32,6 @@ let client;
 let session;
 
 /**
-	sessionProgress is the set of attributes for
-	module:private/components/progress.
-	@private
-	@type !module:private/components/progress~Attrs
-*/
-let sessionProgress = {value: 0};
-
-/**
 	pendings are pending executions depending on asynchronously executing
 	scripts.
 	@private
@@ -49,23 +41,29 @@ const pendings = [
 	{
 		dependencies: {deferreds: true, polyfill: true},
 		callback() {
-			client = require("./client").default;
-			session = client.recoverSession().progress(event => {
-				sessionProgress = {
-					max:   event.total,
-					value: event.loaded,
-				};
+			const progress = require("./progress").add({
+				"aria-describedby": "container",
+				value:              0,
 			});
 
-			sessionProgress = {value: 0};
+			client = require("./client").default;
+			session = client.recoverSession();
+
+			session.then(
+				progress.remove,
+				progress.remove,
+				event => progress.updateValue({
+					max:   event.total,
+					value: event.loaded,
+				}));
 		},
 	}, {
 		dependencies: {
-			deferreds: true, mithril:   true,
+			deferreds: true, /*mithril:   true,*/
 			polyfill:  true, punycode:  true,
 		},
 		callback() {
-			const app = require("./components/app");
+			const app = require("./component/app");
 			const query = m.parseQueryString(
 				location.hash.slice(location.hash.indexOf("?")));
 
@@ -73,19 +71,12 @@ const pendings = [
 				client.setFillingToken(query.id, query.fill);
 				m.route(container, "", app.fill);
 			} else {
-				m.mount(container, {
-					view() {
-						return m(require("./components/progress"),
-							sessionProgress);
-					},
-				});
-
 				session.catch(() => {
 					const deferred = $.Deferred();
 
 					m.mount(container, {
 						view() {
-							return m(require("./components/signin"), {
+							return m(require("./component/signin"), {
 								onloadstart(promise) {
 									promise.done(deferred.resolve.bind(deferred));
 								},
@@ -99,6 +90,8 @@ const pendings = [
 		},
 	},
 ];
+
+container.textContent = "起動中…";
 
 /**
 	execute executes pending executions according to the resolved

@@ -26,18 +26,18 @@ import (
 // File is a structure to keep the context of the file server.
 type File struct {
 	publicRoot string
-	fileError  FileError
+	fileError  Error
 }
 
 // New returns a new file server.
-func New(share string, fileError FileError) File {
+func New(share string, fileError Error) File {
 	return File{path.Join(share, `public`), fileError}
 }
 
 type customizedResponseWriter struct {
 	http.ResponseWriter
 	hijacked  *bool
-	fileError FileError
+	fileError Error
 }
 
 func (writer customizedResponseWriter) Write(bytes []byte) (int, error) {

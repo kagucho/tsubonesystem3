@@ -36,14 +36,14 @@ type Private struct {
 	file      string
 	graph     *template.Template
 	db        db.DB
-	fileError file.FileError
+	fileError file.Error
 }
 
 // New returns a new private.Private.
-func New(share string, db db.DB, fileError file.FileError) (Private, error) {
-	graph, parseError := template.ParseFiles(path.Join(share, `graph`))
-	if parseError != nil {
-		return Private{}, parseError
+func New(share string, db db.DB, fileError file.Error) (Private, error) {
+	graph, err := template.ParseFiles(path.Join(share, `graph`))
+	if err != nil {
+		return Private{}, err
 	}
 
 	return Private{path.Join(share, `public/private`), graph, db, fileError},
@@ -95,9 +95,9 @@ func (private Private) ServeHTTP(writer http.ResponseWriter,
 			}
 
 			var buffer bytes.Buffer
-			if executeError := private.graph.Execute(
-				&buffer, graphFunc(private.db, base, routeQuery)); executeError != nil {
-				panic(executeError)
+			if err := private.graph.Execute(
+				&buffer, graphFunc(private.db, base, routeQuery)); err != nil {
+				panic(err)
 			}
 
 			header := writer.Header()

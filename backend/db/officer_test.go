@@ -35,8 +35,8 @@ func (db DB) testQueryOfficer(t *testing.T) {
 			`局長`,
 			[]string{`management`, `privacy`},
 		}
-		if detail, queryError := db.QueryOfficer(`president`); queryError != nil {
-			t.Error(queryError)
+		if detail, err := db.QueryOfficer(`president`); err != nil {
+			t.Error(err)
 		} else if !reflect.DeepEqual(detail, expected) {
 			t.Errorf(`expected %v, got %v`, expected, detail)
 		}
@@ -45,9 +45,9 @@ func (db DB) testQueryOfficer(t *testing.T) {
 	t.Run(`invalid`, func(t *testing.T) {
 		t.Parallel()
 
-		if detail, queryError := db.QueryOfficer(``); queryError != sql.ErrNoRows {
+		if detail, err := db.QueryOfficer(``); err != sql.ErrNoRows {
 			t.Errorf(`invalid error; expected %v, got %v`,
-				sql.ErrNoRows, queryError)
+				sql.ErrNoRows, err)
 		} else if !reflect.DeepEqual(detail, Officer{}) {
 			t.Error(`expected zero value, got `, detail)
 		}
@@ -55,8 +55,8 @@ func (db DB) testQueryOfficer(t *testing.T) {
 }
 
 func (db DB) testQueryOfficerName(t *testing.T) {
-	if name, queryError := db.QueryOfficerName(`president`); queryError != nil {
-		t.Error(queryError)
+	if name, err := db.QueryOfficerName(`president`); err != nil {
+		t.Error(err)
 	} else if name != `局長` {
 		t.Errorf(`expected "局長", got %q`, name)
 	}
@@ -64,10 +64,10 @@ func (db DB) testQueryOfficerName(t *testing.T) {
 
 func (db DB) testQueryOfficers(t *testing.T) {
 	const expected = `[{"id":"president","member":{"id":"1stDisplayID","mail":"1st@kagucho.net","nickname":"1 !\\%_1\"#","realname":"$&\\%_2'(","tel":"000-000-001"},"name":"局長"},{"id":"vice","member":{"id":"1stDisplayID","mail":"1st@kagucho.net","nickname":"1 !\\%_1\"#","realname":"$&\\%_2'(","tel":"000-000-001"},"name":"副局長"}]`
-	result, resultError := db.QueryOfficers().MarshalJSON()
+	result, err := db.QueryOfficers().MarshalJSON()
 
-	if resultError != nil {
-		t.Error(resultError)
+	if err != nil {
+		t.Error(err)
 	}
 
 	if resultString := string(result); resultString != expected {

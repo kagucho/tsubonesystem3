@@ -24,14 +24,6 @@ const modalDialog = $(".modal-dialog");
 const modal = modalDialog.parent();
 
 /**
-	back is the back of the list of the queued contents. It is null if the
-	list is empty.
-	@private
-	@type ?module:private/modal~PrivateNode
-*/
-let back = null;
-
-/**
 	front is the front of the list of the queued contents. It is null if the
 	list is empty.
 	@private
@@ -147,7 +139,6 @@ function redrawOnhidden(previous, event) {
 */
 function init(value) {
 	front = value;
-	back = value;
 
 	if (!beingHidden) {
 		modal.attr("aria-hidden", "false");
@@ -183,8 +174,6 @@ function defaultOnhidden() {
 
 		if (front) {
 			front.previous = null;
-		} else {
-			back = null;
 		}
 
 		redrawOnhidden(previous, event);
@@ -196,22 +185,6 @@ function defaultOnhidden() {
 }
 
 /**
-	functionInterface returns function which accepts arguments which
-	an optional argument is omitted.
-	@private
-	@param {module:private/modal~PrivateNewNode} callback - A function to
-	be wrapped.
-	@returns {module:private/modal~NewNode} A wrapping function.
-*/
-function functionInterface(callback) {
-	return function() {
-		return arguments[1] && $.isFunction(arguments[1].view) ?
-			callback(arguments[0], arguments[1]) :
-			callback({}, arguments[0]);
-	};
-}
-
-/**
 	initNode creates nodeInterface property of the private node and
 	calls onmodalinit hook of the component.
 	@private
@@ -220,34 +193,6 @@ function functionInterface(callback) {
 */
 function initNode(node) {
 	node.nodeInterface = {
-		insertBefore: functionInterface((attrs, component) => {
-			if (node == front) {
-				return unshift(attrs, component);
-			}
-
-			node.previous = {
-				attrs, component,
-				previous: node.previous,
-				next:     node,
-			};
-
-			initNode(node.previous);
-
-			return node.previous.nodeInterface;
-		}),
-
-		insertAfter: functionInterface((attrs, component) => {
-			node.next = {
-				attrs, component,
-				previous: node,
-				next:     node.next,
-			};
-
-			initNode(node.next);
-
-			return node.next.nodeInterface;
-		}),
-
 		remove() {
 			if (node == front) {
 				hide();
@@ -256,10 +201,6 @@ function initNode(node) {
 				node.previous.next = node.next;
 			} else {
 				return;
-			}
-
-			if (!node.next) {
-				back = node.previous;
 			}
 
 			node.previous = null;
@@ -291,7 +232,7 @@ defaultOnhidden();
 export const isEmpty = () => !front;
 
 /**
-	unshift adds an entry to the front of the list.
+	add adds an entry to the front of the list.
 	@function
 	@param {!module:private/modal~Attrs} [attrs] - A set of the attributes
 	for the new entry.
@@ -299,8 +240,16 @@ export const isEmpty = () => !front;
 	the new entry.
 	@returns {module:private/modal~Node} A new node.
 */
-export const unshift = functionInterface((attrs, component) => {
-	const node = {attrs, component, previous: null, next: front};
+export function add() {
+	const node = {previous: null, next: front};
+
+	if (typeof arguments[0].view == "function") {
+		node.attrs = {};
+		node.component = arguments[0];
+	} else {
+		node.attrs = arguments[0];
+		node.component = arguments[1];
+	}
 
 	if (front) {
 		hide();
@@ -314,33 +263,7 @@ export const unshift = functionInterface((attrs, component) => {
 	}
 
 	return node.nodeInterface;
-});
-
-/**
-	unshift adds an entry to the back of the list.
-	@function
-	@param {!module:private/modal~Attrs} [attrs] - A set of the attributes
-	for the new entry.
-	@param {!module:private/modal~Component} component - A component for
-	the new entry.
-	@returns {module:private/modal~Node} A new node.
-*/
-export const push = functionInterface((attrs, component) => {
-	const node = {attrs, component, previous: back, next: null};
-
-	if (back) {
-		back.next = node;
-		back = node;
-	}
-
-	initNode(node);
-
-	if (!back) {
-		init(node);
-	}
-
-	return node.nodeInterface;
-});
+}
 
 /**
 	PrivateNode is a private node in the list.
@@ -361,26 +284,6 @@ export const push = functionInterface((attrs, component) => {
 /**
 	Node is an object which represents a node in the list.
 	@interface module:private/modal~Node
-*/
-
-/**
-	insertBefore inserts a new node before the node.
-	@function module:private/modal~Node#insertBefore
-	@param {!module:private/modal~Attrs} [attrs] - A set of the attributes
-	for the new entry.
-	@param {!module:private/modal~Component} component - A component for
-	the new entry.
-	@returns {module:private/modal~Node} A new node.
-*/
-
-/**
-	insertAfter inserts a new node after the node.
-	@function module:private/modal~Node#insertAfter
-	@param {!module:private/modal~Attrs} [attrs] - A set of the attributes
-	for the new entry.
-	@param {!module:private/modal~Component} component - A component for
-	the new entry.
-	@returns {module:private/modal~Node} A new node.
 */
 
 /**
@@ -438,26 +341,4 @@ export const push = functionInterface((attrs, component) => {
 	@callback module:private/modal~LifecycleMethod
 	@param {!module:private/modal~Node} node - The node in the list which
 	has the component.
-*/
-
-/**
-	NewNode is a function which accepts arguments which is necessary to
-	create a new node, though some arugment is optional.
-	@private
-	@callback module:private/modal~NewNode
-	@param {!module:private/modal~Attrs} [attrs] - A set of the attributes
-	for the new entry.
-	@param {!module:private/modal~Component} component - A component for
-	the new entry.
-*/
-
-/**
-	PrivateNewNode is a function which accepts arguments which is necessary
-	to create a new node and all arugments are required.
-	@private
-	@callback module:private/modal~PrivateNewNode
-	@param {!module:private/modal~Attrs} attrs - A set of the attributes
-	for the new entry.
-	@param {!module:private/modal~Component} component - A component for
-	the new entry.
 */

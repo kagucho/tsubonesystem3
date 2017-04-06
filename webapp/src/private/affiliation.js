@@ -7,20 +7,34 @@
 
 /** @module private/affiliation */
 
+import client from "./client";
+
 /**
 	id is the ID attribute of affiliation datalist.
 	@type !String
 */
 export const id = "affiliation";
 
+let stream;
+
 /**
-	update updates affiliation datalist with the given affiliations.
+	update updates affiliation datalist with the given affiliations. TODO
 	@param {!Iterable.<String>} affiliations - The
 	affiliations.
 	@returns {Undefined}
 */
-export function update(affiliations) {
-	m.render(document.getElementById(id),
-		Array.from(affiliations,
-			affiliation => m("option", {value: affiliation})));
+export const listen = callback => {
+	if (!stream) {
+		stream = client.mapMembers().map(
+			promise => promise.done(
+			members => m.render(
+				document.getElementById(id),
+				Array.from((function *() {
+					for (const id in members) {
+						yield m("option", {value: members[id].affiliation});
+					}
+				})()))));
+	}
+
+	return stream.map(callback);
 }

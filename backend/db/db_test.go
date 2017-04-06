@@ -23,10 +23,10 @@ func TestDB(t *testing.T) {
 	var db DB
 
 	if !t.Run(`Prepare`, func(t *testing.T) {
-		var prepareError error
-		db, prepareError = Prepare()
-		if prepareError != nil {
-			t.Fatal(prepareError)
+		var err error
+		db, err = Prepare()
+		if err != nil {
+			t.Fatal(err)
 		}
 	}) {
 		t.FailNow()
@@ -46,8 +46,8 @@ func TestDB(t *testing.T) {
 	t.Run(`GetScope`, db.testGetScope)
 
 	t.Run(`Close`, func(t *testing.T) {
-		if closeError := db.Close(); closeError != nil {
-			t.Error(closeError)
+		if err := db.Close(); err != nil {
+			t.Error(err)
 		}
 	})
 }

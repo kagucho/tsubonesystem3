@@ -27,16 +27,16 @@ import (
 
 func testHeader(t *testing.T, encoded string, alg string) {
 	var decoded []byte
-	decoded, decodeError := base64.RawURLEncoding.DecodeString(encoded)
-	if decodeError != nil {
-		t.Error(decodeError)
+	decoded, err := base64.RawURLEncoding.DecodeString(encoded)
+	if err != nil {
+		t.Error(err)
 		return
 	}
 
 	var unmarshaled header
-	unmarshalError := json.Unmarshal(decoded, &unmarshaled)
-	if unmarshalError != nil {
-		t.Error(unmarshalError)
+	err := json.Unmarshal(decoded, &unmarshaled)
+	if err != nil {
+		t.Error(err)
 		return
 	}
 
@@ -55,16 +55,16 @@ func testHeader(t *testing.T, encoded string, alg string) {
 
 func testClaim(t *testing.T, encoded string, sub string, scope string,
 	before int64, after int64, tmp bool) {
-	decoded, decodeError := base64.RawURLEncoding.DecodeString(encoded)
-	if decodeError != nil {
-		t.Error(decodeError)
+	decoded, err := base64.RawURLEncoding.DecodeString(encoded)
+	if err != nil {
+		t.Error(err)
 		return
 	}
 
 	var unmarshaled claim
-	unmarshalError := json.Unmarshal(decoded, &unmarshaled)
-	if unmarshalError != nil {
-		t.Error(unmarshalError)
+	err := json.Unmarshal(decoded, &unmarshaled)
+	if err != nil {
+		t.Error(err)
 		return
 	}
 
@@ -102,9 +102,9 @@ func TestJWT(t *testing.T) {
 	var jwt JWT
 
 	if !t.Run(`New`, func(t *testing.T) {
-		authority, authorityError := authority.New()
-		if authorityError != nil {
-			t.Fatal(authorityError)
+		authority, err := authority.New()
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		jwt = New(authority)

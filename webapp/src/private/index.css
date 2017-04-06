@@ -40,7 +40,20 @@
 	border: hidden;
 }
 
+@keyframes component-app-root-fading {
+	to {
+		opacity: 0;
+	}
+}
+
 @keyframes component-progress-hiding {
+	to {
+		transform:        scaleY(0);
+		transform-origin: top;
+	}
+}
+
+@keyframes progress-hiding {
 	to {
 		transform:        scaleY(0);
 		transform-origin: top;

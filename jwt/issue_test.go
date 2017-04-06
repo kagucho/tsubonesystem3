@@ -28,9 +28,9 @@ func (context JWT) testIssue(t *testing.T) {
 
 	before := time.Now().Add(duration).Unix()
 
-	issued, issueError := context.Issue(`sub`, `scope`, duration, true)
-	if issueError != nil {
-		t.Fatal(issueError)
+	issued, err := context.Issue(`sub`, `scope`, duration, true)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	after := time.Now().Add(duration).Unix()
@@ -50,7 +50,7 @@ func (context JWT) testIssue(t *testing.T) {
 	*/
 	splitedLen := len(splited)
 	if splitedLen != 3 {
-		t.Error(`expected 3 elements, found %q elements`, splitedLen)
+		t.Errorf(`expected 3 elements, found %q elements`, splitedLen)
 	}
 
 	testHeader(t, splited[0], context.authority.Alg())

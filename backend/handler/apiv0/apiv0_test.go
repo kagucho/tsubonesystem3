@@ -59,8 +59,8 @@ func (apiv0 Apiv0) TestServeHTTP(t *testing.T) {
 		}{}
 
 		decoder := json.NewDecoder(recorder.Body)
-		if decodeError := decoder.Decode(&response); decodeError != nil {
-			t.Fatal(decodeError)
+		if err := decoder.Decode(&response); err != nil {
+			t.Fatal(err)
 		}
 
 		token = `Bearer ` + response.AccessToken
@@ -104,20 +104,18 @@ func (apiv0 Apiv0) TestServeHTTP(t *testing.T) {
 func TestApiv0(t *testing.T) {
 	var apiv0 Apiv0
 
-	db, dbError := db.Prepare()
-	if dbError != nil {
-		t.Fatal(dbError)
+	db, err := db.Prepare()
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	defer db.Close()
 
 	if !t.Run(`New`, func(t *testing.T) {
-		var newError error
-
 		// TODO: test that mail.Mail is used to send mails.
-		apiv0, newError = New(db, mail.Mail{})
-		if newError != nil {
-			t.Error(newError)
+		apiv0, err = New(db, mail.Mail{})
+		if err != nil {
+			t.Error(err)
 		}
 	}) {
 		t.FailNow()

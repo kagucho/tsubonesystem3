@@ -46,9 +46,9 @@ func TestFileError(t *testing.T) {
 	t.Parallel()
 
 	t.Run(`test/301/na`, func(t *testing.T) {
-		fileError, newError := NewError(`test/301/na`)
+		fileError, err := NewError(`test/301/na`)
 
-		if newError == nil {
+		if err == nil {
 			t.Error(`expected an error, got nil`)
 		}
 
@@ -61,11 +61,11 @@ func TestFileError(t *testing.T) {
 		var fileError FileError
 
 		if !t.Run(`NewError`, func(t *testing.T) {
-			var newError error
+			var err error
 
-			fileError, newError = NewError(`test/301/invalid`)
-			if newError != nil {
-				t.Error(newError)
+			fileError, err = NewError(`test/301/invalid`)
+			if err != nil {
+				t.Error(err)
 			}
 		}) {
 			t.FailNow()

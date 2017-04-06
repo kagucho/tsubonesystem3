@@ -30,59 +30,62 @@ import (
 	"path/filepath"
 )
 
+// Backend is the structure to hold the context of the backend.
 type Backend struct {
 	unchunked.Unchunked
-	db db.DB
+	apiv0 apiv0.APIv0
+	db    db.DB
 }
 
 var share string
 
 func init() {
-	executable, executableError := osext.ExecutableFolder()
-	if executableError != nil {
-		log.Panic(executableError)
+	executable, err := osext.ExecutableFolder()
+	if err != nil {
+		log.Panic(err)
 	}
 
 	share = filepath.Join(executable, `../share/tsubonesystem3`)
 }
 
+// New returns a new backend.Backend.
 func New() (Backend, error) {
 	log.Print("TsuboneSystem3  Copyright (C) 2017  Kagucho <kagucho.net@gmail.com>")
 	log.Print("This program comes with ABSOLUTELY NO WARRANTY.")
 	log.Print("This is free software, and you are welcome to redistribute it")
 	log.Print("under certain conditions; see `/license' for details.")
 
-	fileError, fileErrorError := file.NewError(share)
-	if fileErrorError != nil {
-		return Backend{}, fileErrorError
+	fileError, fileErrorErr := file.NewError(share)
+	if fileErrorErr != nil {
+		return Backend{}, fileErrorErr
 	}
 
-	mail, mailError := mail.New(share)
-	if mailError != nil {
-		return Backend{}, mailError
+	mail, mailErr := mail.New(share)
+	if mailErr != nil {
+		return Backend{}, mailErr
 	}
 
-	db, dbError := db.Prepare()
-	if dbError != nil {
-		return Backend{}, dbError
+	db, dbErr := db.New()
+	if dbErr != nil {
+		return Backend{}, dbErr
 	}
 
-	apiv0, apiv0Error := apiv0.New(db, mail)
-	if apiv0Error != nil {
-		if closeError := db.Close(); closeError != nil {
-			log.Print(closeError)
+	apiv0, apiv0Err := apiv0.New(db, mail)
+	if apiv0Err != nil {
+		if closeErr := db.Close(); closeErr != nil {
+			log.Print(closeErr)
 		}
 
-		return Backend{}, apiv0Error
+		return Backend{}, apiv0Err
 	}
 
-	private, privateError := private.New(share, db, fileError)
-	if privateError != nil {
-		if closeError := db.Close(); closeError != nil {
-			log.Print(closeError)
+	private, privateErr := private.New(share, db, fileError)
+	if privateErr != nil {
+		if closeErr := db.Close(); closeErr != nil {
+			log.Print(closeErr)
 		}
 
-		return Backend{}, privateError
+		return Backend{}, privateErr
 	}
 
 	file := file.New(share, fileError)
@@ -93,9 +96,19 @@ func New() (Backend, error) {
 	mux.Handle(`/private`, private)
 	mux.Handle(`/`, file)
 
-	return Backend{unchunked.New(mux.ServeHTTP), db}, nil
+	return Backend{unchunked.New(mux.ServeHTTP), apiv0, db}, nil
 }
 
-func (backend Backend) Close() error {
+/*
+End releases all resources.
+
+This function must be called before disposing backend.Backend returned by
+backend.New.
+
+After calling this, calling functions bound to backend.Backend will result in an
+unexpected result.
+*/
+func (backend Backend) End() error {
+	backend.apiv0.End()
 	return backend.db.Close()
 }

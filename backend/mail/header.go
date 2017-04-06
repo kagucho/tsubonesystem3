@@ -12,7 +12,7 @@ const closing = "?="
 const lineMax = 76
 
 func isASCII(character byte) bool {
-	return character & 0x80 == 0
+	return character&0x80 == 0
 }
 
 func isPrintableASCII(character byte) bool {
@@ -20,7 +20,7 @@ func isPrintableASCII(character byte) bool {
 }
 
 func isAtext(character byte) bool {
-	switch (character) {
+	switch character {
 	case '(':
 	case ')':
 	case '>':
@@ -41,7 +41,7 @@ func isAtext(character byte) bool {
 }
 
 func isQtext(character byte) bool {
-	switch (character) {
+	switch character {
 	case '\\':
 	case '"':
 		return false
@@ -80,25 +80,25 @@ type qWordEncoder struct {
 func newQWordEncoder(writer io.Writer, lineLen *int, wsp byte) (qWordEncoder, error) {
 	lineLenValue := *lineLen
 
-	if lineLenValue + 1 + len(opening) + utf8.UTFMax + len(closing) > lineMax {
-		_, writeError := writer.Write([]byte(lineEnding))
-		if writeError != nil {
-			return qWordEncoder{}, writeError
+	if lineLenValue+1+len(opening)+utf8.UTFMax+len(closing) > lineMax {
+		_, err := writer.Write([]byte(lineEnding))
+		if err != nil {
+			return qWordEncoder{}, err
 		}
 
 		lineLenValue = 0
 	}
 
-	written, writeError := writer.Write([]byte{wsp})
-	if writeError != nil {
-		return qWordEncoder{}, writeError
+	written, err := writer.Write([]byte{wsp})
+	if err != nil {
+		return qWordEncoder{}, err
 	}
 
 	lineLenValue += written
 
-	written, writeError = writer.Write([]byte(opening))
-	if writeError != nil {
-		return qWordEncoder{}, writeError
+	written, err = writer.Write([]byte(opening))
+	if err != nil {
+		return qWordEncoder{}, err
 	}
 
 	lineLenValue += written
@@ -124,7 +124,7 @@ func (encoder qWordEncoder) Write(word []byte) (int, error) {
 
 			decodedRune, decodedLen = utf8.DecodeRune(word[index:])
 			if decodedRune == utf8.RuneError {
-				switch (decodedLen) {
+				switch decodedLen {
 				case 0:
 					return writtenSum, fmt.Errorf(`word is empty`)
 
@@ -139,17 +139,17 @@ func (encoder qWordEncoder) Write(word []byte) (int, error) {
 			encodedLen = 3 * decodedLen
 		}
 
-		if lineLenValue + encodedLen + len(closing) > lineMax {
-			written, writeError := encoder.Writer.Write([]byte(closing + lineEnding))
-			if writeError != nil {
-				return writtenSum, writeError
+		if lineLenValue+encodedLen+len(closing) > lineMax {
+			written, err := encoder.Writer.Write([]byte(closing + lineEnding))
+			if err != nil {
+				return writtenSum, err
 			}
 
 			writtenSum += written
 
-			written, writeError = encoder.Writer.Write([]byte(` ` + opening))
-			if writeError != nil {
-				return writtenSum, writeError
+			written, err = encoder.Writer.Write([]byte(` ` + opening))
+			if err != nil {
+				return writtenSum, err
 			}
 
 			writtenSum += written
@@ -167,14 +167,14 @@ func (encoder qWordEncoder) Write(word []byte) (int, error) {
 			} else {
 				bytes = []byte{
 					'=',
-					hex[word[index] >> 4],
-					hex[word[index] & 15],
+					hex[word[index]>>4],
+					hex[word[index]&15],
 				}
 			}
 
-			written, writeError := encoder.Writer.Write(bytes)
-			if writeError != nil {
-				return writtenSum, writeError
+			written, err := encoder.Writer.Write(bytes)
+			if err != nil {
+				return writtenSum, err
 			}
 
 			writtenSum += written
@@ -188,29 +188,28 @@ func (encoder qWordEncoder) Write(word []byte) (int, error) {
 }
 
 func (encoder qWordEncoder) Close() error {
-	_, writeError := encoder.Writer.Write([]byte(closing))
-
-	return writeError
+	_, err := encoder.Writer.Write([]byte(closing))
+	return err
 }
 
 func encodeQWord(writer io.Writer, lineLen *int, wsp byte, word []byte) error {
-	encoder, encoderError := newQWordEncoder(writer, lineLen, wsp)
-	if encoderError != nil {
-		return encoderError
+	encoder, err := newQWordEncoder(writer, lineLen, wsp)
+	if err != nil {
+		return err
 	}
 
-	_, encoderError = encoder.Write(word)
-	if encoderError != nil {
-		return encoderError
+	_, err = encoder.Write(word)
+	if err != nil {
+		return err
 	}
 
 	return encoder.Close()
 }
 
 func writeSubject(writer io.Writer, subject string) error {
-	lineLen, writeError := writer.Write([]byte(`Subject:`))
-	if writeError != nil {
-		return writeError
+	lineLen, err := writer.Write([]byte(`Subject:`))
+	if err != nil {
+		return err
 	}
 
 	ascii := true
@@ -223,20 +222,20 @@ func writeSubject(writer io.Writer, subject string) error {
 
 	for index < len(subjectBytes) {
 		if isWSP(subjectBytes[index]) {
-			if ascii && 1 + (index - nextBegin) <= lineMax {
+			if ascii && 1+(index-nextBegin) <= lineMax {
 				if toEncodeEnd > toEncodeBegin {
-					writeError = encodeQWord(writer, &lineLen, wsp, subjectBytes[toEncodeBegin:toEncodeEnd])
-					if writeError != nil {
-						return writeError
+					err = encodeQWord(writer, &lineLen, wsp, subjectBytes[toEncodeBegin:toEncodeEnd])
+					if err != nil {
+						return err
 					}
 
 					wsp = subjectBytes[toEncodeEnd]
 				}
 
-				writeError = encodeMultiple(writer, &lineLen,
+				err = encodeMultiple(writer, &lineLen,
 					[][]byte{{wsp}, subjectBytes[nextBegin:index]})
-				if writeError != nil {
-					return writeError
+				if err != nil {
+					return err
 				}
 
 				wsp = subject[index]
@@ -253,25 +252,25 @@ func writeSubject(writer io.Writer, subject string) error {
 		index++
 	}
 
-	if !ascii || 1 + (index - nextBegin) > lineMax {
-		writeError = encodeQWord(writer, &lineLen, wsp, subjectBytes[toEncodeBegin:index])
-		if writeError != nil {
-			return writeError
+	if !ascii || 1+(index-nextBegin) > lineMax {
+		err = encodeQWord(writer, &lineLen, wsp, subjectBytes[toEncodeBegin:index])
+		if err != nil {
+			return err
 		}
 	} else {
 		if toEncodeEnd > toEncodeBegin {
-			writeError = encodeQWord(writer, &lineLen, wsp, subjectBytes[toEncodeBegin:toEncodeEnd])
-			if writeError != nil {
-				return writeError
+			err = encodeQWord(writer, &lineLen, wsp, subjectBytes[toEncodeBegin:toEncodeEnd])
+			if err != nil {
+				return err
 			}
 
 			wsp = subjectBytes[toEncodeEnd]
 		}
 
-		writeError = encodeMultiple(writer, &lineLen,
+		err = encodeMultiple(writer, &lineLen,
 			[][]byte{{wsp}, subjectBytes[nextBegin:index]})
-		if writeError != nil {
-			return writeError
+		if err != nil {
+			return err
 		}
 	}
 
@@ -286,17 +285,17 @@ func encodeMultiple(writer io.Writer, lineLen *int, multiple [][]byte) error {
 	}
 
 	if lineLenValue > lineMax {
-		if _, writeError := writer.Write([]byte(lineEnding)); writeError != nil {
-			return writeError
+		if _, err := writer.Write([]byte(lineEnding)); err != nil {
+			return err
 		}
 	}
 
 	lineLenValue = *lineLen
 
 	for _, single := range multiple {
-		written, writeError := writer.Write(single)
-		if writeError != nil {
-			return writeError
+		written, err := writer.Write(single)
+		if err != nil {
+			return err
 		}
 
 		lineLenValue += written
@@ -308,7 +307,7 @@ func encodeMultiple(writer io.Writer, lineLen *int, multiple [][]byte) error {
 }
 
 func encodeQuotable(writer io.Writer, lineLen *int, wsp byte, quotable []byte) error {
-	if 1 + len(quotable) > lineMax {
+	if 1+len(quotable) > lineMax {
 		return encodeQWord(writer, lineLen, wsp, quotable)
 	}
 
@@ -316,12 +315,12 @@ func encodeQuotable(writer io.Writer, lineLen *int, wsp byte, quotable []byte) e
 		if !isASCII(quotable[index]) {
 			return encodeQWord(writer, lineLen, wsp, quotable)
 		} else if !isAtext(quotable[index]) {
-			if 3 + len(quotable) < lineMax {
+			if 3+len(quotable) < lineMax {
 				return encodeMultiple(writer, lineLen,
 					[][]byte{{' ', '"'}, quotable, {'"'}})
-			} else {
-				return encodeQWord(writer, lineLen, wsp, quotable)
 			}
+
+			return encodeQWord(writer, lineLen, wsp, quotable)
 		} else if !isQtext(quotable[index]) {
 			return fmt.Errorf(`character %q at %v is not quotable`,
 				quotable[index], index)
@@ -332,28 +331,28 @@ func encodeQuotable(writer io.Writer, lineLen *int, wsp byte, quotable []byte) e
 }
 
 func writeTo(writer io.Writer, group string, tos []mail.Address) error {
-	lineLen, writeError := writer.Write([]byte(`To:`))
-	if writeError != nil {
-		return writeError
+	lineLen, err := writer.Write([]byte(`To:`))
+	if err != nil {
+		return err
 	}
 
 	if group != `` {
-		writeError = encodeQuotable(writer, &lineLen, ' ', []byte(group))
-		if writeError != nil {
-			return writeError
+		err = encodeQuotable(writer, &lineLen, ' ', []byte(group))
+		if err != nil {
+			return err
 		}
 
-		writeError = encodeMultiple(writer, &lineLen, [][]byte{{':'}})
-		if writeError != nil {
-			return writeError
+		err = encodeMultiple(writer, &lineLen, [][]byte{{':'}})
+		if err != nil {
+			return err
 		}
 	}
 
 	for index, to := range tos {
 		if index > 0 {
-			writeError = encodeMultiple(writer, &lineLen, [][]byte{{','}})
-			if writeError != nil {
-				return writeError
+			err = encodeMultiple(writer, &lineLen, [][]byte{{','}})
+			if err != nil {
+				return err
 			}
 		}
 
@@ -363,22 +362,22 @@ func writeTo(writer io.Writer, group string, tos []mail.Address) error {
 		}
 
 		nameBytes := []byte(to.Name)
-		writeError = encodeQuotable(writer, &lineLen, ' ', nameBytes)
-		if writeError != nil {
-			return writeError
+		err = encodeQuotable(writer, &lineLen, ' ', nameBytes)
+		if err != nil {
+			return err
 		}
 
-		writeError = encodeMultiple(writer, &lineLen,
+		err = encodeMultiple(writer, &lineLen,
 			[][]byte{{' ', '<'}, addressBytes, {'>'}})
-		if writeError != nil {
-			return writeError
+		if err != nil {
+			return err
 		}
 	}
 
 	if group != `` {
-		writeError = encodeMultiple(writer, &lineLen, [][]byte{{';'}})
-		if writeError != nil {
-			return writeError
+		err = encodeMultiple(writer, &lineLen, [][]byte{{';'}})
+		if err != nil {
+			return err
 		}
 	}
 

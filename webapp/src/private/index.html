@@ -47,10 +47,6 @@
 			src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/locale/ja.js">
 		</script>
 		<script defer crossorigin="anonymous"
-			integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7"
-			src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js">
-		</script>
-		<script defer crossorigin="anonymous"
 			integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
 			src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js">
 		</script>
@@ -66,12 +62,7 @@
 	</head>
 	<body>
 		<div id="container">
-			<script>${require("../../entry/loader!./index.js")}</script>
-			<script async crossorigin="anonymous"
-				onload="execute('mithril')"
-				integrity="sha384-0eJVCFsnr+DhU/kroNh1PFqEDXNgpAApLJRJFIPh2yStFWQyhRLZ/UqH37JoUWka"
-				src="https://cdnjs.cloudflare.com/ajax/libs/mithril/1.0.1/mithril.min.js">
-			</script>
+			<script>${require("!!raw-loader!./jquery.min.js")}${require("!!raw-loader!mithril")}${require("../../entry/loader!./index.js")}</script>
 			<script async crossorigin="anonymous"
 				onload="execute('polyfill')"
 				integrity="sha384-rBjL8Ve1ukKGEEUDNBI7BMlT5bSdfwzP4M7OPBylbmAs3xPUg5rE43D8SLBSWARA"
@@ -119,6 +110,22 @@
 			<div
 				class="modal-dialog" role="document"
 				style="display: inline-block; text-align: left; width: auto;">
+			</div>
+		</div>
+		<!--
+			z-index of progressbar should be larger than ones of
+			bootstrap components.
+			https://github.com/twbs/bootstrap/blob/v3.3.7/less/variables.less#L265
+		-->
+		<div
+			aria-busy="false"
+			aria-hidden="true"
+			aria-valuemax="1"
+			aria-valuemin="0"
+			aria-valuenow="0"
+			role="progressbar"
+			style="background-color: lightgray; position: fixed; top: 0; height: .5rem; width: 100%; z-index: 1051">
+			<div style="background-color: dodgerblue; height: 100%; transform-origin: 0;">
 			</div>
 		</div>
 		<datalist id="affiliation">

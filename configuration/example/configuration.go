@@ -28,8 +28,11 @@ const DBDSN string = `root@unix(/var/lib/mysql/mysql.sock)/tsubonesystem`
 
 /*
 	DBPssswordKey is the string of the key to encrypt password in the
-	database. Its length should be 28 and it must be cryptographically
+	database. Its length should be 128 and it must be cryptographically
 	random.
+
+	For example:
+	openssl rand 128 -hex | sed 's/\(..\)/\\x\1/g'
 
 	Set the following value for testing.
 */

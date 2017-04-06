@@ -18,98 +18,200 @@
 package db
 
 import (
+	"context"
 	"database/sql"
-	"github.com/kagucho/tsubonesystem3/json"
-	"strings"
+	"github.com/go-sql-driver/mysql"
+	"github.com/kagucho/tsubonesystem3/backend/encoding"
+	"log"
 )
 
-// Chief is a structure to hold the information about a member.
-type Chief struct {
-	ID       string `json:"id"`
-	Mail     string `json:"mail"`
-	Nickname string `json:"nickname"`
-	Realname string `json:"realname",omitempty`
-	Tel      string `json:"tel",omitempty`
+type ClubCommon struct {
+	Name    string `json:"name"`
+	Chief   string `json:"chief"`
 }
 
-// ClubDetail is a structure to hold the information about a club.
-type ClubDetail struct {
-	Chief   Chief          `json:"chief"`
+// Club is a structure holding the information about a club.
+type Club struct {
+	ClubCommon
 	Members ClubMemberChan `json:"members"`
-	Name    string         `json:"name"`
 }
 
-type ClubMemberChan <-chan ClubMemberResult
-
-type ClubMemberResult struct {
-	Error error
-	Value struct {
-		Entrance uint16 `json:"entrance",omitempty`
-		ID       string `json:"id"`
-		Nickname string `json:"nickname"`
-		Realname string `json:"realname",omitempty`
-	}
-}
-
-type ClubName struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-type ClubNameChan <-chan ClubNameResult
-
-type ClubNameResult struct {
-	Error error
-	Value ClubName
+type ClubEntryCommon struct {
+	ClubCommon
+	ID      string `json:"id"`
 }
 
 type ClubEntry struct {
-	ClubName
-	Chief Chief `json:"chief"`
+	ClubEntryCommon
+	Members []string `json:"members"`
 }
 
-type ClubEntryChan <-chan ClubEntryResult
+// ClubEntryChan is a reciever of db.ClubEntry.
+type ClubEntryChan <-chan ClubEntry
 
-type ClubEntryResult struct {
+type clubEntry struct {
+	ClubEntryCommon
+	members *[]string `json:"members"`
+}
+
+/*
+ClubMemberResult is a structure holding a result of querying the members
+belonging to a club.
+*/
+type ClubMemberResult struct {
+	ID    string
 	Error error
-	Value ClubEntry
 }
 
+// ClubMemberChan is a reciever of db.ClubMemberResult.
+type ClubMemberChan <-chan ClubMemberResult
+
+/*
+MarshalJSON returns the JSON encoding of the remaining entries and closes the
+channel.
+
+This implements an interface used in encoding/encoding.
+
+json - The Go Programming Language
+Example (CustomMarshalJSON)
+https://golang.org/pkg/encoding/json/#example__customMarshalJSON
+*/
 func (entryChan ClubEntryChan) MarshalJSON() ([]byte, error) {
-	return json.MarshalChan(entryChan)
+	return encoding.MarshalJSONArray(func() (interface{}, error, bool) {
+		result, present := <-entryChan
+		return result, nil, present
+	})
 }
 
+/*
+MarshalJSON returns the JSON encoding of the members and closes the channel.
+This implements an interface used in encoding/encoding.
+
+json - The Go Programming Language
+Example (CustomMarshalJSON)
+https://golang.org/pkg/encoding/json/#example__customMarshalJSON
+*/
 func (memberChan ClubMemberChan) MarshalJSON() ([]byte, error) {
-	return json.MarshalChan(memberChan)
+	return encoding.MarshalJSONArray(func() (interface{}, error, bool) {
+		result, present := <-memberChan
+		return result.ID, result.Error, present
+	})
 }
 
-func (nameChan ClubNameChan) MarshalJSON() ([]byte, error) {
-	return json.MarshalChan(nameChan)
+/*
+DeleteClub deletes a club identified by the given ID.
+
+It returns db.ErrIncorrectIdentity if the given ID is incorrect. Other errors
+tell db.DB is bad.
+*/
+func (db DB) DeleteClub(id string) error {
+	result, execErr := db.stmts[stmtDeleteClub].Exec(id)
+	if execErr != nil {
+		return execErr
+	}
+
+	affected, affectedErr := result.RowsAffected()
+	if affectedErr != nil {
+		return affectedErr
+	}
+
+	if affected <= 0 {
+		return ErrIncorrectIdentity
+	}
+
+	return nil
 }
 
-// QueryClubDetail returns db.ClubDetail corresponding with the given ID.
-func (db DB) QueryClubDetail(id string) (ClubDetail, error) {
+/*
+InsertClub inserts a club with the given properties.
+
+It may return one of the following errors:
+db.ErrBadOmission tells the ID or name is omitted.
+db.ErrDupEntry tells a club with the given ID already exists.
+db.ErrIncorrectIdentity tells the ID of the chief is incorrect.
+db.ErrInvalid tells some of the given properties is invalid.
+
+Other errors tell db.DB is bad.
+*/
+func (db DB) InsertClub(id, name, chief string) error {
+	if id == `` || name == `` {
+		return ErrBadOmission
+	}
+
+	if !validateID(id) {
+		return ErrInvalid
+	}
+
+	_, err := db.stmts[stmtInsertClub].Exec(id, name, chief)
+
+	if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+		switch mysqlErr.Number {
+		case erDupEntry:
+			return ErrDupEntry
+
+		case erDataTooLong:
+			fallthrough
+		case erTruncatedWrongValueForField:
+			return ErrInvalid
+
+		case erNoReferencedRow:
+			fallthrough
+		case erNoReferencedRow2:
+			return ErrIncorrectIdentity
+		}
+	}
+
+	return err
+}
+
+/*
+QueryClub returns db.Club corresponding with the given ID.
+
+It returns db.ErrIncorrectIdentity if the given ID is incorrect. Other errors
+tell db.DB is bad.
+
+Resources will be holded until Members gets closed.
+*/
+func (db DB) QueryClub(id string) (Club, error) {
 	var clubID uint8
-	var club ClubDetail
+	var club Club
 
-	if scanError := db.stmts[stmtSelectClub].QueryRow(id).Scan(
-		&clubID, &club.Name,
-		&club.Chief.ID, &club.Chief.Mail,
-		&club.Chief.Nickname, &club.Chief.Realname,
-		&club.Chief.Tel); scanError == sql.ErrNoRows {
-		return ClubDetail{}, IncorrectIdentity
-	} else if scanError != nil {
-		return ClubDetail{}, scanError
+	tx, err := db.sql.BeginTx(context.Background(),
+		&sql.TxOptions{
+			Isolation: sql.LevelSerializable,
+			ReadOnly:  true,
+		})
+	if err != nil {
+		return club, err
+	}
+
+	if err := tx.Stmt(db.stmts[stmtSelectClubByID]).QueryRow(id).Scan(
+		&clubID, &club.Name, &club.Chief); err != nil {
+		if err := tx.Commit(); err != nil {
+			log.Print(err)
+		}
+
+		if err == sql.ErrNoRows {
+			err = ErrIncorrectIdentity
+		}
+
+		return club, err
 	}
 
 	members := make(chan ClubMemberResult)
 
 	go func() {
-		defer close(members)
+		defer func() {
+			close(members)
 
-		rows, queryError := db.stmts[stmtSelectMembersByClub].Query(clubID)
-		if queryError != nil {
-			members <- ClubMemberResult{Error: queryError}
+			if err := tx.Commit(); err != nil {
+				log.Print(err)
+			}
+		}()
+
+		rows, err := tx.Stmt(db.stmts[stmtSelectMemberIDsByInternalClub]).Query(clubID)
+		if err != nil {
+			members <- ClubMemberResult{Error: err}
 			return
 		}
 
@@ -117,13 +219,9 @@ func (db DB) QueryClubDetail(id string) (ClubDetail, error) {
 
 		for rows.Next() {
 			var result ClubMemberResult
-
-			result.Error = rows.Scan(
-				&result.Value.Entrance, &result.Value.ID,
-				&result.Value.Nickname, &result.Value.Realname)
+			result.Error = rows.Scan(&result.ID)
 
 			members <- result
-
 			if result.Error != nil {
 				return
 			}
@@ -135,95 +233,175 @@ func (db DB) QueryClubDetail(id string) (ClubDetail, error) {
 	return club, nil
 }
 
-// QueryClubName returns the name of the club identified with the given ID.
+/*
+QueryClubName returns the name of the club identified with the given ID.
+
+It returns db.ErrIncorrectIdentity if the given ID is incorrect. Other errors
+tell db.DB is bad.
+*/
 func (db DB) QueryClubName(id string) (string, error) {
 	var name string
-	scanError := db.stmts[stmtSelectClubName].QueryRow(id).Scan(&name)
-	if scanError == sql.ErrNoRows {
-		scanError = IncorrectIdentity
+	err := db.stmts[stmtSelectClubNameByID].QueryRow(id).Scan(&name)
+	if err == sql.ErrNoRows {
+		err = ErrIncorrectIdentity
 	}
 
-	return name, scanError
+	return name, err
 }
 
-// QueryClubNames returns db.ClubNameChan which represents the names of all the
-// clubs.
-func (db DB) QueryClubNames() ClubNameChan {
-	resultChan := make(chan ClubNameResult)
+/*
+QueryClubs returns db.ClubChan which represents all the clubs.
 
-	go func() {
-		defer close(resultChan)
+A result recieved from the returned channel tells an error if db.DB is bad.
 
-		rows, queryError := db.stmts[stmtSelectClubNames].Query()
-		if queryError != nil {
-			resultChan <- ClubNameResult{Error: queryError}
-			return
+Resources will be holded until the channel gets closed.
+*/
+func (db DB) QueryClubs() (ClubEntryChan, error) {
+	tx, txErr := db.sql.BeginTx(context.Background(),
+		&sql.TxOptions{
+			Isolation: sql.LevelSerializable,
+			ReadOnly:  true,
+		})
+	if txErr != nil {
+		return nil, txErr
+	}
+
+	defer func() {
+		if commitErr := tx.Commit(); commitErr != nil {
+			log.Print(commitErr)
+		}
+	}()
+
+	entries := make(map[uint8]clubEntry)
+
+	clubsErr := func() error {
+		rows, queryErr := db.stmts[stmtSelectClubs].Query()
+		if queryErr != nil {
+			return queryErr
 		}
 
+		defer func() {
+			if closeErr := rows.Close(); closeErr != nil {
+				log.Print(closeErr)
+			}
+		}()
+
 		for rows.Next() {
-			var result ClubNameResult
+			var dbID uint8
+			var entry ClubEntryCommon
+			var members []string
 
-			result.Error = rows.Scan(
-				&result.Value.ID, &result.Value.Name)
+			scanErr := rows.Scan(&dbID,
+				&entry.ID, &entry.Name, &entry.Chief)
+			if scanErr != nil {
+				return scanErr
+			}
 
-			resultChan <- result
+			entries[dbID] = clubEntry{entry, &members}
+		}
 
-			if result.Error != nil {
-				return
+		return nil
+	}()
+	if clubsErr != nil {
+		return nil, clubsErr
+	}
+
+	membersErr := func() error {
+		rows, queryErr := db.stmts[stmtSelectClubInternalIDMemberID].Query()
+		if queryErr != nil {
+			return queryErr
+		}
+
+		defer func() {
+			if closeErr := rows.Close(); closeErr != nil {
+				log.Print(closeErr)
+			}
+		}()
+
+		for rows.Next() {
+			var dbID uint8
+			var memberID string
+
+			scanErr := rows.Scan(&dbID, &memberID)
+			if scanErr != nil {
+				return scanErr
+			}
+
+			members := entries[dbID].members
+			*members = append(*members, memberID)
+		}
+
+		return nil
+	}()
+	if membersErr != nil {
+		return nil, membersErr
+	}
+
+	entryChan := make(chan ClubEntry)
+
+	go func() {
+		defer close(entryChan)
+
+		for _, entry := range entries {
+			entryChan <- ClubEntry{
+				entry.ClubEntryCommon,
+				*entry.members,
 			}
 		}
 	}()
 
-	return resultChan
+	return entryChan, nil
 }
 
-// QueryClubs returns db.ClubEntryChan which represents all the clubs.
-func (db DB) QueryClubs() ClubEntryChan {
-	resultChan := make(chan ClubEntryResult)
+/*
+UpdateClub updates the club identified with the given ID, with the given
+properties.
 
-	go func() {
-		defer close(resultChan)
+It may return one of the following errors:
+db.ErrIncorrectIdentity tells the given ID of the club or the one of the chief
+is incorrect.
+db.ErrInvalid tells some of the given properties is invalid.
 
-		rows, queryError := db.stmts[stmtSelectClubs].Query()
-		if queryError != nil {
-			resultChan <- ClubEntryResult{Error: queryError}
-			return
-		}
+Other errors tell db.DB is bad.
+*/
+func (db DB) UpdateClub(id, name, chief string) error {
+	arguments := append(make([]interface{}, 0, 3), sql.Named(`id`, id))
 
-		for rows.Next() {
-			var result ClubEntryResult
-
-			result.Error = rows.Scan(
-				&result.Value.ID, &result.Value.Name,
-				&result.Value.Chief.ID, &result.Value.Chief.Mail,
-				&result.Value.Chief.Nickname, &result.Value.Chief.Realname,
-				&result.Value.Chief.Tel)
-
-			resultChan <- result
-		}
-	}()
-
-	return resultChan
-}
-
-func (db DB) txQueryInternalClubs(tx *sql.Tx, clubs []string) (map[uint8]struct{}, error) {
-	clubIDs := make(map[uint8]struct{}, len(clubs))
-
-	rows, queryError := tx.Stmt(db.stmts[stmtSelectInternalClubs]).Query(strings.Join(clubs, `,`))
-	if queryError != nil {
-		return nil, queryError
+	if name != `` {
+		arguments = append(arguments, sql.Named(`name`, name))
 	}
 
-	defer rows.Close()
-
-	for rows.Next() {
-		var id uint8
-		if scanError := rows.Scan(&id); scanError != nil {
-			return nil, scanError
-		}
-
-		clubIDs[id] = struct{}{}
+	if chief != `` {
+		arguments = append(arguments, sql.Named(`chief`, chief))
 	}
 
-	return clubIDs, nil
+	result, execErr := db.stmts[stmtUpdateClub].Exec(arguments...)
+	if execErr != nil {
+		if mysqlErr, ok := execErr.(*mysql.MySQLError); ok {
+			switch mysqlErr.Number {
+			case erDataTooLong:
+				fallthrough
+			case erTruncatedWrongValueForField:
+				return ErrInvalid
+
+			case erNoReferencedRow:
+				fallthrough
+			case erNoReferencedRow2:
+				return ErrIncorrectIdentity
+			}
+		}
+
+		return execErr
+	}
+
+	affected, affectedErr := result.RowsAffected()
+	if affectedErr != nil {
+		return affectedErr
+	}
+
+	if affected <= 0 {
+		return ErrIncorrectIdentity
+	}
+
+	return nil
 }

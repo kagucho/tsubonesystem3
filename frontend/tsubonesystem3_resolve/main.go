@@ -24,9 +24,9 @@ import (
 )
 
 func main() {
-	resolved, resolveError := net.ResolveTCPAddr(``, configuration.ListenAddress)
-	if resolveError != nil {
-		os.Stderr.WriteString(resolveError.Error())
+	resolved, err := net.ResolveTCPAddr(``, configuration.ListenAddress)
+	if err != nil {
+		os.Stderr.WriteString(err.Error())
 	}
 
 	os.Stdout.WriteString(resolved.String())

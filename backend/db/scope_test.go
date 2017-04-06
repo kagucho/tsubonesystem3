@@ -29,7 +29,7 @@ func (db DB) testGetScope(t *testing.T) {
 		user        string
 		password    string
 		scope       scope.Scope
-		scopeError  error
+		scopeErr    error
 	}{
 		{
 			`president`, `1stDisplayID`, `1stPassword`,
@@ -51,11 +51,11 @@ func (db DB) testGetScope(t *testing.T) {
 		t.Run(test.description, func(t *testing.T) {
 			t.Parallel()
 
-			result, queryError :=
+			result, err :=
 				db.GetScope(test.user, test.password)
-			if queryError != test.scopeError {
+			if err != test.scopeErr {
 				t.Errorf(`expected %v, got %v`,
-					test.scopeError, queryError)
+					test.scopeErr, err)
 			}
 
 			if result != test.scope {

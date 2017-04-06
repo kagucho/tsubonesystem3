@@ -19,6 +19,7 @@ package mail
 
 import "net/url"
 
+// Message sends message.
 func (context Mail) Message(host string, recipients []string, id, nickname, to, subject, body string) error {
 	var data struct {
 		Base          string

@@ -19,62 +19,168 @@ package db
 
 import (
 	"database/sql"
-	"github.com/kagucho/tsubonesystem3/json"
+	"errors"
+	"github.com/go-sql-driver/mysql"
+	"github.com/kagucho/tsubonesystem3/backend/encoding"
+	"log"
 	"strings"
 )
 
-type OfficerCommon struct {
-	Member OfficerMember `json:"member"`
-	Name   string        `json:"name"`
+// OfficerName is a structure associating the ID and name of an officer.
+type OfficerName struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
-// OfficerDetail is a structure to hold the information about an officer
+/*
+OfficerNameResult is a strucutre representing a result of querying
+db.OfficerName.
+*/
+type OfficerNameResult struct {
+	OfficerName
+	Error error
+}
+
+// OfficerNameChan is a reciever of db.OfficerNameResult.
+type OfficerNameChan <-chan OfficerNameResult
+
+// OfficerDetail is a structure holding details of an officer
 type OfficerDetail struct {
-	OfficerCommon
-	Scope []string `json:"scope"`
+	Member string   `json:"member"`
+	Name   string   `json:"name"`
+	Scope  []string `json:"scope"`
 }
 
+// OfficerEntry is a structure holding basic information of an officer.
 type OfficerEntry struct {
-	OfficerCommon
-	ID string `json:"id"`
+	OfficerName
+	Member string `json:"member"`
 }
 
+/*
+OfficerEntryResult is a strcuture representing a result of querying
+db.OfficerEntry.
+*/
+type OfficerEntryResult struct {
+	OfficerEntry
+	Error error
+}
+
+// OfficerEntryChan is a reciever of db.OfficerEntryResult.
 type OfficerEntryChan <-chan OfficerEntryResult
 
-type OfficerEntryResult struct {
-	Error error
-	Value OfficerEntry
-}
+// NoScopeUpdate is a string telling not to upate the scope.
+const NoScopeUpdate = "\000"
 
-// OfficerMember is a structure to hold the information about a member who is
-// an officer.
-type OfficerMember struct {
-	ID       string `json:"id"`
-	Mail     string `json:"mail"`
-	Nickname string `json:"nickname"`
-	Realname string `json:"realname,omitempty"`
-	Tel      string `json:"tel,omitempty"`
-}
+/*
+ErrOfficerSuicide is an error telling the operator is removing his own
+management permission.
+*/
+var ErrOfficerSuicide = errors.New(`removing operator's own management permission`)
 
+/*
+MarshalJSON returns the JSON encoding of the remaining entries and closes the
+channel.
+
+This implements an interface used in encoding/encoding.
+
+json - The Go Programming Language
+Example (CustomMarshalJSON)
+https://golang.org/pkg/encoding/json/#example__customMarshalJSON
+*/
 func (entryChan OfficerEntryChan) MarshalJSON() ([]byte, error) {
-	return json.MarshalChan(entryChan)
+	return encoding.MarshalJSONArray(func() (interface{}, error, bool) {
+		result, present := <-entryChan
+		return result.OfficerEntry, result.Error, present
+	})
 }
 
-// QueryOfficerDetail returns db.OfficerDetail of the officer identified with
-// the given ID.
+/*
+DeleteOfficer deletes an officer identified by the given ID.
+
+It returns db.ErrIncorrectIdentity if the given ID of the operator or the
+officer is incorrect. It returns db.ErrOfficerSuicide if the operation is
+expected to remove the management permission of the operator. Other errors tell
+db.DB is bad.
+*/
+func (db DB) DeleteOfficer(operator, id string) error {
+	result, execErr := db.stmts[stmtCallDeleteOfficer].Exec(operator, id)
+	if execErr != nil {
+		if mysqlErr, ok := execErr.(*mysql.MySQLError); ok && mysqlErr.Number == erSignalException {
+			return ErrOfficerSuicide
+		}
+
+		return execErr
+	}
+
+	affected, affectedErr := result.RowsAffected()
+	if affectedErr != nil {
+		return affectedErr
+	}
+
+	if affected <= 0 {
+		return ErrIncorrectIdentity
+	}
+
+	return nil
+}
+
+/*
+InsertOfficer inserts an operator with the given properties.
+
+It may return one of the following errors:
+db.ErrBadOmission tells the ID or name is omitted.
+db.ErrDupEntry tells the ID or name is duplicate.
+db.ErrIncorrectIdentity tells the ID of the member is incorrect.
+db.ErrInvalid tells the name of the scope is invalid.
+
+Other errors tell db.DB is bad.
+*/
+func (db DB) InsertOfficer(id, name, member, scope string) error {
+	_, scopeBytes := stringListToDBList(scope)
+	_, err := db.stmts[stmtInsertOfficer].Exec(id, name, scopeBytes, member)
+
+	if id == `` || name == `` {
+		return ErrBadOmission
+	}
+
+	if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+		switch mysqlErr.Number {
+		case erDataTooLong:
+			fallthrough
+		case erTruncatedWrongValueForField:
+			return ErrInvalid
+
+		case erDupEntry:
+			return ErrDupEntry
+
+		case erNoReferencedRow:
+			fallthrough
+		case erNoReferencedRow2:
+			return ErrIncorrectIdentity
+		}
+	}
+
+	return err
+}
+
+/*
+QueryOfficerDetail returns db.OfficerDetail of the officer identified with the
+given ID.
+
+It returns db.ErrIncorrectIdentity if the given ID is incorrect. Other errors
+tell db.DB is bad.
+*/
 func (db DB) QueryOfficerDetail(id string) (OfficerDetail, error) {
 	var detail OfficerDetail
 	var scope string
 
-	scanError := db.stmts[stmtSelectOfficer].QueryRow(id).Scan(
-		&detail.Name, &scope,
-		&detail.Member.ID, &detail.Member.Mail,
-		&detail.Member.Nickname, &detail.Member.Realname,
-		&detail.Member.Tel)
-	if scanError == sql.ErrNoRows {
-		return detail, IncorrectIdentity
-	} else if scanError != nil {
-		return detail, scanError
+	err := db.stmts[stmtSelectOfficerByID].QueryRow(id).Scan(
+		&detail.Name, &scope, &detail.Member)
+	if err == sql.ErrNoRows {
+		return detail, ErrIncorrectIdentity
+	} else if err != nil {
+		return detail, err
 	}
 
 	detail.Scope = strings.Split(scope, `,`)
@@ -82,45 +188,51 @@ func (db DB) QueryOfficerDetail(id string) (OfficerDetail, error) {
 	return detail, nil
 }
 
-// QueryOfficerName returns the name of the officer identified with the given
-// ID.
+/*
+QueryOfficerName returns the name of the officer identified with the given ID.
+
+It returns db.ErrIncorrectIdentity if the given ID is incorrect. Other errors
+tell db.DB is bad.
+*/
 func (db DB) QueryOfficerName(id string) (string, error) {
 	var name string
-	scanError := db.stmts[stmtSelectOfficerName].QueryRow(id).Scan(&name)
-	if scanError == sql.ErrNoRows {
-		scanError = IncorrectIdentity
+	err := db.stmts[stmtSelectOfficerNameByID].QueryRow(id).Scan(&name)
+	if err == sql.ErrNoRows {
+		err = ErrIncorrectIdentity
 	}
 
-	return name, scanError
+	return name, err
 }
 
-// QueryOfficers returns db.OfficerEntryChan which represents all the officers.
-func (db DB) QueryOfficers() OfficerEntryChan {
-	resultChan := make(chan OfficerEntryResult)
+/*
+QueryOfficerNames returns db.OfficerNameChan representing the names of all
+officers.
+
+Resources will be holded until the channel gets closed.
+*/
+func (db DB) QueryOfficerNames() OfficerNameChan {
+	resultChan := make(chan OfficerNameResult)
 
 	go func() {
 		defer close(resultChan)
 
-		rows, queryError := db.stmts[stmtSelectOfficers].Query()
-		if queryError != nil {
-			resultChan <- OfficerEntryResult{Error: queryError}
+		rows, err := db.stmts[stmtSelectOfficerIDNames].Query()
+		if err != nil {
+			resultChan <- OfficerNameResult{Error: err}
 			return
 		}
 
-		defer rows.Close()
+		defer func() {
+			if err := rows.Close(); err != nil {
+				log.Print(err)
+			}
+		}()
 
 		for rows.Next() {
-			var result OfficerEntryResult
-
-			result.Error = rows.Scan(&result.Value.ID, &result.Value.Name,
-				&result.Value.Member.ID,
-				&result.Value.Member.Mail,
-				&result.Value.Member.Nickname,
-				&result.Value.Member.Realname,
-				&result.Value.Member.Tel)
+			var result OfficerNameResult
+			result.Error = rows.Scan(&result.ID, &result.Name)
 
 			resultChan <- result
-
 			if result.Error != nil {
 				return
 			}
@@ -128,4 +240,108 @@ func (db DB) QueryOfficers() OfficerEntryChan {
 	}()
 
 	return resultChan
+}
+
+/*
+QueryOfficers returns db.OfficerEntryChan which represents all the officers.
+
+Resources will be holded until the channel gets closed.
+*/
+func (db DB) QueryOfficers() OfficerEntryChan {
+	resultChan := make(chan OfficerEntryResult)
+
+	go func() {
+		defer close(resultChan)
+
+		rows, err := db.stmts[stmtSelectOfficers].Query()
+		if err != nil {
+			resultChan <- OfficerEntryResult{Error: err}
+			return
+		}
+
+		defer func() {
+			if err := rows.Close(); err != nil {
+				log.Print(err)
+			}
+		}()
+
+		for rows.Next() {
+			var result OfficerEntryResult
+
+			result.Error = rows.Scan(
+				&result.ID, &result.Name, &result.Member)
+
+			resultChan <- result
+			if result.Error != nil {
+				return
+			}
+		}
+	}()
+
+	return resultChan
+}
+
+/*
+UpdateOfficer updates the officer identified by the given ID, with the given
+properties.
+
+It may return one of the following properties:
+db.ErrDupEntry tells the name is duplicate.
+db.ErrIncorrectIdentity tells the ID of the officer or member is incorrect.
+db.ErrInvalid tells some of the properties is invalid.
+
+Other errors tell db.DB is bad.
+*/
+func (db DB) UpdateOfficer(operator, id, name, member, scope string) error {
+	arguments := make([]interface{}, 5)
+	arguments[0] = operator
+	arguments[1] = id
+
+	if name != `` {
+		arguments[2] = name
+	}
+
+	if member != `` {
+		arguments[3] = member
+	}
+
+	if scope != NoScopeUpdate {
+		_, arguments[4] = stringListToDBList(scope)
+	}
+
+	result, execErr := db.stmts[stmtCallUpdateOfficer].Exec(arguments...)
+	if execErr != nil {
+		if mysqlErr, ok := execErr.(*mysql.MySQLError); ok {
+			switch mysqlErr.Number {
+			case erDataTooLong:
+				fallthrough
+			case erTruncatedWrongValueForField:
+				return ErrInvalid
+
+			case erDupEntry:
+				return ErrDupEntry
+
+			case erSignalException:
+				return ErrOfficerSuicide
+
+			case erNoReferencedRow:
+				fallthrough
+			case erNoReferencedRow2:
+				return ErrIncorrectIdentity
+			}
+		}
+
+		return execErr
+	}
+
+	affected, affectedErr := result.RowsAffected()
+	if affectedErr != nil {
+		return affectedErr
+	}
+
+	if affected <= 0 {
+		return ErrIncorrectIdentity
+	}
+
+	return nil
 }

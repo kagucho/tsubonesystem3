@@ -35,9 +35,9 @@ func (context JWT) Issue(sub string, scope string,
 		return int(math.Ceil(float64(bytes) * 4 / 3))
 	}
 
-	header, marshalError := json.Marshal(header{context.authority.Alg()})
-	if marshalError != nil {
-		return ``, marshalError
+	header, err := json.Marshal(header{context.authority.Alg()})
+	if err != nil {
+		return ``, err
 	}
 
 	claimStruct := claim{
@@ -46,16 +46,16 @@ func (context JWT) Issue(sub string, scope string,
 	}
 
 	if duration != 0 {
-		claimStruct.Exp = time.Now().Add(duration).Unix()
+		claimStruct.Exp = Time{time.Now().Add(duration)}
 	}
 
 	if temporary {
 		claimStruct.Tmp = true
 	}
 
-	claim, marshalError := json.Marshal(claimStruct)
-	if marshalError != nil {
-		return ``, marshalError
+	claim, err := json.Marshal(claimStruct)
+	if err != nil {
+		return ``, err
 	}
 
 	messageBuffer := bytes.NewBuffer(make([]byte, 0,

@@ -140,7 +140,7 @@ func (jwt JWT) testAuthenticate(t *testing.T) {
 
 			exp := time.Unix(4294967296, 0)
 			before := exp.Sub(time.Now())
-			authenticated, authenticateError := jwt.Authenticate(sum.String())
+			authenticated, err := jwt.Authenticate(sum.String())
 			after := exp.Sub(time.Now())
 			if !authenticateError.IsError() {
 				if test.expectedErrorMessage != `` {
@@ -151,11 +151,11 @@ func (jwt JWT) testAuthenticate(t *testing.T) {
 				t.Errorf(`expected error (nil), got %q`,
 					authenticateError.Error())
 			} else {
-				message := authenticateError.Error()
-				matched, matchError := regexp.MatchString(
+				message := err.Error()
+				matched, err := regexp.MatchString(
 					test.expectedErrorMessage, message)
-				if matchError != nil {
-					t.Error(matchError)
+				if err != nil {
+					t.Err(err)
 				} else if !matched {
 					t.Errorf(`invalid error; expected to match with %q, got %q`,
 						test.expectedErrorMessage, message)
@@ -170,7 +170,7 @@ func (jwt JWT) testAuthenticate(t *testing.T) {
 			if test.valid {
 				if authenticated.Sub != `sub` {
 					t.Errorf(`invalid subject; expected "sub", got %q`,
-						authenticated)
+						authenticated.Sub)
 				}
 
 				if authenticated.Duration < after || authenticated.Duration > before {

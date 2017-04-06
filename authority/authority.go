@@ -39,8 +39,8 @@ type Authority struct {
 // random key.
 func New() (Authority, error) {
 	var authority Authority
-	_, randError := rand.Read(authority.key[:])
-	return authority, randError
+	_, err := rand.Read(authority.key[:])
+	return authority, err
 }
 
 // Alg returns the identifier of the algorithm as descibed in

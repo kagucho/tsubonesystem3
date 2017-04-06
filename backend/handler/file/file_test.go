@@ -27,9 +27,9 @@ import (
 
 func assertBodyWithFile(t *testing.T, recorder *httptest.ResponseRecorder,
 	file string) {
-	body, bodyError := ioutil.ReadFile(file)
-	if bodyError != nil {
-		t.Fatal(bodyError)
+	body, err := ioutil.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	if result := recorder.Body.Bytes(); !bytes.Equal(result, body) {
@@ -40,9 +40,9 @@ func assertBodyWithFile(t *testing.T, recorder *httptest.ResponseRecorder,
 func TestCustomizedResponseWriter(t *testing.T) {
 	t.Parallel()
 
-	fileError, newError := NewError(`test/unknown/na`)
-	if newError != nil {
-		t.Fatal(newError)
+	fileError, err := NewError(`test/unknown/na`)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	for _, test := range [...]struct {
@@ -196,9 +196,9 @@ func TestFile(t *testing.T) {
 	var file File
 
 	if !t.Run(`New`, func(t *testing.T) {
-		fileError, newError := NewError(`test/unknown/file`)
-		if newError != nil {
-			t.Fatal(newError)
+		fileError, err := NewError(`test/unknown/file`)
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		file = New(`test/unknown/file`, fileError)

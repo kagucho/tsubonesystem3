@@ -21,6 +21,13 @@
 */
 
 /**
+	Callback EventListener.
+	@callback external:DOM~EventListener
+	@see {@link https://dom.spec.whatwg.org/#eventtarget|
+		DOM Standard 2.6. Interface EventTarget}
+*/
+
+/**
 	Interface Element.
 	@interface external:DOM~Element
 	@extends Object
@@ -37,11 +44,10 @@
 */
 
 /**
-	Interface HTMLInputElement.
-	@interface external:DOM~HTMLInputElement
+	Interface HTMLImageElement.
 	@extends external:DOM~HTMLElement
-	@see {@link https://html.spec.whatwg.org/multipage/forms.html#htmlinputelement|
-		HTML Standard 4.10.5 The input element}
+	@see {@link https://html.spec.whatwg.org/multipage/embedded-content.html#htmlimageelement|
+		HTML Standard 4.8.3 The img element}
 */
 
 /**
@@ -50,4 +56,28 @@
 	@extends external:DOM~HTMLElement
 	@see {@link https://html.spec.whatwg.org/multipage/forms.html#htmlformelement|
 		HTML Standard 4.10.3 The form element}
+*/
+
+/**
+	Interface HTMLInputElement.
+	@interface external:DOM~HTMLInputElement
+	@extends external:DOM~HTMLElement
+	@see {@link https://html.spec.whatwg.org/multipage/forms.html#htmlinputelement|
+		HTML Standard 4.10.5 The input element}
+*/
+
+/**
+	Interface CanvasRenderingContext2D.
+	@interface external:DOM~CanvasRenderingContext2D
+	@extends Object
+	@see {@link https://html.spec.whatwg.org/multipage/scripting.html#canvasrenderingcontext2d|
+		HTML Standard 4.12.5.1 The 2D rendering context}
+*/
+
+/**
+	Interface CanvasGradient.
+	@interface external:DOM~CanvasGradient
+	@extends Object
+	@see {@link https://html.spec.whatwg.org/multipage/scripting.html#canvasgradient|
+		HTML Standard 4.12.5.1 The 2D rendering context}
 */

@@ -1,0 +1,37 @@
+# Copyright (C) 2017  Kagucho <kagucho.net@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+policy_module(tsubonesystem3 3.0.0)
+
+require {
+	attribute file_type;
+	class dir {add_name remove_name search write};
+	class sock_file {create unlink write};
+	class unix_stream_socket connectto;
+	type httpd_t;
+}
+
+type tsubonesystem3_t;
+type tsubonesystem3_exec_t;
+typeattribute tsubonesystem3_t file_type;
+
+init_daemon_domain(tsubonesystem3_t, tsubonesystem3_exec_t)
+mysql_stream_connect(tsubonesystem3_t)
+sendmail_domtrans(tsubonesystem3_t)
+
+allow httpd_t tsubonesystem3_t: unix_stream_socket connectto;
+allow httpd_t tsubonesystem3_t: sock_file write;
+allow tsubonesystem3_t tsubonesystem3_t: dir {add_name remove_name search write};
+allow tsubonesystem3_t tsubonesystem3_t: sock_file {create unlink};
