@@ -82,6 +82,7 @@ func New() (DB, error) {
 		return db, err
 	}
 
+	db.sql.SetConnMaxLifetime(17592186044416)
 	db.sql.SetMaxOpenConns(128)
 
 	_, err = db.sql.Exec(`SET sql_mode='ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ZERO_DATE,NO_ZERO_IN_DATE,STRICT_ALL_TABLES'`)
